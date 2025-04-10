@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Anna University - CEG</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <div class="logo">
+          <img
+            src="https://upload.wikimedia.org/wikipedia/en/thumb/4/49/Anna_University_Logo.svg/1200px-Anna_University_Logo.svg.png"
+            alt="Anna Univ Logo"
+          />
+          <h1>ANNA UNIVERSITY - COLLEGE OF ENGINEERING GUINDY</h1>
+        </div>
+      </header>
+
+      <main>
+        <section class="login-options">
+          <div class="option" onclick="showLogin('Faculty')">
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
+              alt="Faculty"
+            />
+            <h3>Faculty Login</h3>
+          </div>
+          <div class="option" onclick="showLogin('HOD')">
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/1995/1995574.png"
+              alt="HOD"
+            />
+            <h3>HOD Login</h3>
+          </div>
+          <div class="option" onclick="showLogin('Admin')">
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/2920/2920024.png"
+              alt="Admin"
+            />
+            <h3>Admin Login</h3>
+          </div>
+        </section>
+
+        <!-- Login Popup -->
+        <div id="loginPopup" class="popup">
+          <div class="popup-content">
+            <span id="closeBtn" onclick="closeLogin()">&times;</span>
+            <h2 id="loginTitle">Login</h2>
+
+            <label>Username</label>
+            <input type="text" id="username" placeholder="Enter Username" />
+
+            <label>Password</label>
+            <input type="password" id="password" placeholder="Enter Password" />
+
+            <div class="captcha-section">
+              <span id="num1">0</span> + <span id="num2">0</span> =
+              <input
+                type="number"
+                id="userSum"
+                placeholder="Enter Sum"
+                style="width: 80px; margin-left: 10px"
+              />
+              <button class="refresh" onclick="generateNumbers()">
+                &#10227;
+              </button>
+            </div>
+
+            <div class="button-group">
+              <a href="#" class="forgot">Forgot Password?</a>
+              <div class="action-buttons">
+                <button class="signup" onclick="handleSignup()">Sign Up</button>
+                <button class="login" onclick="validateLogin()">Login</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <footer>
+        <div class="contact">
+          <p>Email: <a href="mailto:info@annauniv.edu">info@annauniv.edu</a></p>
+          <p>Phone: +91-44-2235-7004</p>
+        </div>
+        <div class="social">
+          <a href="#">Facebook</a>
+          <a href="#">LinkedIn</a>
+          <a href="#">Twitter</a>
+        </div>
+      </footer>
+    </div>
+    <script>
+      let num1 = 0,
+        num2 = 0;
+
+      function showLogin(role) {
+        document.getElementById("loginTitle").innerText = role + " Login";
+        document.getElementById("loginPopup").style.display = "flex";
+        generateNumbers();
+      }
+
+      function closeLogin() {
+        document.getElementById("loginPopup").style.display = "none";
+      }
+
+      function generateNumbers() {
+        num1 = Math.floor(Math.random() * 10) + 1;
+        num2 = Math.floor(Math.random() * 10) + 1;
+        document.getElementById("num1").innerText = num1;
+        document.getElementById("num2").innerText = num2;
+        document.getElementById("userSum").value = "";
+      }
+
+      async function validateLogin() {
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+        const userSum = parseInt(document.getElementById("userSum").value);
+
+        const response = await fetch("/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username,
+            password,
+            sum: userSum,
+            expectedSum: num1 + num2,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          alert(data.message);
+          window.location.href = "dashboard.html";
+        } else {
+          alert(data.message);
+          generateNumbers();
+        }
+      }
+
+      async function handleSignup() {
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+
+        if (!username || !password) {
+          alert("Username and password cannot be empty.");
+          return;
+        }
+
+        const response = await fetch("/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          alert("Signup successful! You can now login.");
+        } else {
+          alert(data.message);
+        }
+      }
+    </script>
+  </body>
+</html>

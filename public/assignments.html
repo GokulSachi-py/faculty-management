@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>View Assignments</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="faculty-container">
+    <div class="sidebar">
+      <h2>Faculty Panel</h2>
+      <ul>
+        <li onclick="navigate('dashboard')">Dashboard</li>
+        <li onclick="navigate('profile')">Profile</li>
+        <li onclick="navigate('assignments')">View Assignments</li>
+      </ul>
+    </div>
+    <div class="main-content">
+      <h2>View Assignments</h2>
+      <p>This section can be updated to display assignments later.</p>
+    </div>
+  </div>
+
+  <script>
+    function navigate(page) {
+      window.location.href = page + '.html';
+    }
+  </script>
+</body>
+</html>
