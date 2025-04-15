@@ -1,167 +1,265 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Anna University - CEG</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <div class="wrapper">
-      <header>
-        <div class="logo">
-          <img
-            src="https://upload.wikimedia.org/wikipedia/en/thumb/4/49/Anna_University_Logo.svg/1200px-Anna_University_Logo.svg.png"
-            alt="Anna Univ Logo"
-          />
-          <h1>ANNA UNIVERSITY - COLLEGE OF ENGINEERING GUINDY</h1>
-        </div>
-      </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Anna University - CEG</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
 
-      <main>
-        <section class="login-options">
-          <div class="option" onclick="showLogin('Faculty')">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
-              alt="Faculty"
-            />
-            <h3>Faculty Login</h3>
-          </div>
-          <div class="option" onclick="showLogin('HOD')">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/1995/1995574.png"
-              alt="HOD"
-            />
-            <h3>HOD Login</h3>
-          </div>
-          <div class="option" onclick="showLogin('Admin')">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/2920/2920024.png"
-              alt="Admin"
-            />
-            <h3>Admin Login</h3>
-          </div>
-        </section>
+<header>
+  <div class="logo">
+    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWldGywAS5je80cyVtFQ7ifg5Sl82slUaE4-sQMlwNXwl53P86XBnO-LRFoqnxXA4afbI&usqp=CAU" alt="Anna Univ Logo" width="80">
+    <h1>ANNA UNIVERSITY - COLLEGE OF ENGINEERING GUINDY</h1>
+  </div>
+</header>
+<main>
+<section class="login-options">
+  <div class="option" onclick="showLogin('Faculty')">
+    <img src="https://cdn-icons-png.flaticon.com/512/3062/3062634.png" alt="Faculty">
+    <h3>Faculty Login</h3>
+  </div>
+  <div class="option" onclick="showLogin('HOD')">
+    <img src="https://cdn-icons-png.flaticon.com/512/1995/1995574.png" alt="HOD">
+    <h3>HOD Login</h3>
+  </div>
+  <div class="option" onclick="showLogin('Admin')">
+    <img src="https://cdn-icons-png.flaticon.com/512/2920/2920024.png" alt="Admin">
+    <h3>Admin Login</h3>
+  </div>
+</section>
 
-        <!-- Login Popup -->
-        <div id="loginPopup" class="popup">
-          <div class="popup-content">
-            <span id="closeBtn" onclick="closeLogin()">&times;</span>
-            <h2 id="loginTitle">Login</h2>
+<!-- Login Popup -->
+<div id="loginPopup" class="popup">
+  <div class="popup-content">
+    <span id="closeBtn" onclick="closeLogin()">&times;</span>
+    <h2 id="loginTitle">Login</h2>
 
-            <label>Username</label>
-            <input type="text" id="username" placeholder="Enter Username" />
+    <label>Username</label>
+    <input type="text" id="username" placeholder="Enter Username">
 
-            <label>Password</label>
-            <input type="password" id="password" placeholder="Enter Password" />
+    <label>Password</label>
+    <input type="password" id="password" placeholder="Enter Password">
 
-            <div class="captcha-section">
-              <span id="num1">0</span> + <span id="num2">0</span> =
-              <input
-                type="number"
-                id="userSum"
-                placeholder="Enter Sum"
-                style="width: 80px; margin-left: 10px"
-              />
-              <button class="refresh" onclick="generateNumbers()">
-                &#10227;
-              </button>
-            </div>
-
-            <div class="button-group">
-              <a href="#" class="forgot">Forgot Password?</a>
-              <div class="action-buttons">
-                <button class="signup" onclick="handleSignup()">Sign Up</button>
-                <button class="login" onclick="validateLogin()">Login</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <footer>
-        <div class="contact">
-          <p>Email: <a href="mailto:info@annauniv.edu">info@annauniv.edu</a></p>
-          <p>Phone: +91-44-2235-7004</p>
-        </div>
-        <div class="social">
-          <a href="#">Facebook</a>
-          <a href="#">LinkedIn</a>
-          <a href="#">Twitter</a>
-        </div>
-      </footer>
+    <div class="captcha-section">
+      <span id="num1">0</span> + <span id="num2">0</span> =
+      <input type="number" id="userSum" placeholder="Enter Sum" style="width: 80px; margin-left: 10px;">
+      <button class="refresh" onclick="generateNumbers()">&#10227;</button>
     </div>
-    <script>
-      let num1 = 0,
-        num2 = 0;
 
-      function showLogin(role) {
-        document.getElementById("loginTitle").innerText = role + " Login";
-        document.getElementById("loginPopup").style.display = "flex";
-        generateNumbers();
-      }
+    <div class="button-group">
+      <a href="#" class="forgot">Forgot Password?</a>
+      <div class="action-buttons">
+        <button class="signup" onclick="handleSignup()">Sign Up</button>
+        <button class="login" onclick="validateLogin()">Login</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-      function closeLogin() {
-        document.getElementById("loginPopup").style.display = "none";
-      }
+<!-- Extended Sign Up Popup -->
+<div id="extraSignupPopup" class="popup">
+    <div class="popup-content" style="max-height: 90vh; overflow-y: auto;">
+      <span onclick="closeExtraSignup()" id="closeExtraBtn">&times;</span>
+      <h2>Extended Signup - Faculty</h2>
+  
+      <!-- Basic Details -->
+      <label>Full Name</label>
+      <input type="text" id="fullName" placeholder="Enter Full Name">
+  
+      <label>Date of Birth</label>
+      <input type="date" id="dob">
+  
+      <label>Faculty ID</label>
+      <input type="text" id="facultyId" placeholder="Enter Faculty ID">
+  
+      <label>Permanent Address</label>
+      <textarea id="address" placeholder="Enter Permanent Address"></textarea>
+  
+      <label>Campus</label>
+      <select id="campus">
+        <option value="">-- Select Campus --</option>
+        <option value="CEG">CEG</option>
+        <option value="MIT">MIT</option>
+        <option value="ACT">ACT</option>
+        <option value="SAP">SAP</option>
+      </select>
+  
+      <label>Campus Name</label>
+      <input type="text" id="campusName" placeholder="Enter Campus Name">
+  
+      <hr><h3>Personal Details</h3>
+  
+      <label>Email</label>
+      <input type="email" id="email" placeholder="Enter Email">
+  
+      <label>Phone Number</label>
+      <input type="text" id="phone" placeholder="Enter Phone Number">
+  
+      <label>Alternative Phone Number</label>
+      <input type="text" id="altPhone" placeholder="Enter Alternative Phone Number">
+  
+      <hr><h3>Banking Details</h3>
+  
+      <label>Bank Account Number</label>
+      <input type="text" id="bankAccount" placeholder="Enter Account Number">
+  
+      <label>IFSC Code</label>
+      <input type="text" id="ifsc" placeholder="Enter IFSC Code">
+  
+      <label>MIRC Code</label>
+      <input type="text" id="mirc" placeholder="Enter MIRC Code">
+  
+      <label>Branch Name</label>
+      <input type="text" id="branchName" placeholder="Enter Branch Name">
+  
+      <label>Branch Address</label>
+      <textarea id="branchAddress" placeholder="Enter Branch Address"></textarea>
+  
+      <hr><h3>Academic Details</h3>
+  
+      <label>Qualification</label>
+      <select id="qualification">
+        <option value="">-- Select Qualification --</option>
+        <option value="B.E">B.E</option>
+        <option value="M.E">M.E</option>
+      </select>
+  
+      <label>Expertise In</label>
+      <input type="text" id="expertise" placeholder="Enter Expertise Area">
+  
+      <button class="login" onclick="submitExtraDetails()">Submit</button>
+    </div>
+  </div>
+</main>
+<footer>
+  <div class="contact">
+    <p>Email: <a href="mailto:info@annauniv.edu">info@annauniv.edu</a></p>
+    <p>Phone: ‪+91-44-2235-7004‬</p>
+  </div>
+  <div class="social">
+    <a href="#">Facebook</a>
+    <a href="#">LinkedIn</a>
+    <a href="#">Twitter</a>
+  </div>
+</footer>
 
-      function generateNumbers() {
-        num1 = Math.floor(Math.random() * 10) + 1;
-        num2 = Math.floor(Math.random() * 10) + 1;
-        document.getElementById("num1").innerText = num1;
-        document.getElementById("num2").innerText = num2;
-        document.getElementById("userSum").value = "";
-      }
+<script>
+  let num1 = 0, num2 = 0;
 
-      async function validateLogin() {
-        const username = document.getElementById("username").value.trim();
-        const password = document.getElementById("password").value.trim();
-        const userSum = parseInt(document.getElementById("userSum").value);
+  function showLogin(role) {
+    document.getElementById('loginTitle').innerText = role + " Login";
+    document.getElementById('loginPopup').style.display = 'flex';
+    generateNumbers();
+  }
 
-        const response = await fetch("/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username,
-            password,
-            sum: userSum,
-            expectedSum: num1 + num2,
-          }),
-        });
+  function closeLogin() {
+    document.getElementById('loginPopup').style.display = 'none';
+  }
 
-        const data = await response.json();
+  function generateNumbers() {
+    num1 = Math.floor(Math.random() * 10) + 1;
+    num2 = Math.floor(Math.random() * 10) + 1;
+    document.getElementById("num1").innerText = num1;
+    document.getElementById("num2").innerText = num2;
+    document.getElementById("userSum").value = '';
+  }
 
-        if (response.ok) {
-          alert(data.message);
-          window.location.href = "dashboard.html";
-        } else {
-          alert(data.message);
-          generateNumbers();
-        }
-      }
+  async function validateLogin() {
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const userSum = parseInt(document.getElementById("userSum").value);
 
-      async function handleSignup() {
-        const username = document.getElementById("username").value.trim();
-        const password = document.getElementById("password").value.trim();
+    const response = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username,
+        password,
+        sum: userSum,
+        expectedSum: num1 + num2
+      })
+    });
 
-        if (!username || !password) {
-          alert("Username and password cannot be empty.");
-          return;
-        }
+    const data = await response.json();
 
-        const response = await fetch("/signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
-        });
+    if (response.ok) {
+      alert(data.message);
+      window.location.href = 'dashboard.html';
+    } else {
+      alert(data.message);
+      generateNumbers();
+    }
+  }
 
-        const data = await response.json();
-        if (response.ok) {
-          alert("Signup successful! You can now login.");
-        } else {
-          alert(data.message);
-        }
-      }
-    </script>
-  </body>
+  async function handleSignup() {
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    if (!username || !password) {
+      alert("Username and password cannot be empty.");
+      return;
+    }
+
+    const response = await fetch('/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      alert("Signup successful! Please fill in additional details.");
+      localStorage.setItem('username', username);
+      document.getElementById('loginPopup').style.display = 'none';
+      document.getElementById('extraSignupPopup').style.display = 'flex';
+    } else {
+      alert(data.message);
+    }
+  }
+
+  function closeExtraSignup() {
+    document.getElementById('extraSignupPopup').style.display = 'none';
+  }
+
+  async function submitExtraDetails() {
+    const username = localStorage.getItem('username');
+    const details = {
+      username,
+      fullName: document.getElementById("fullName").value,
+      dob: document.getElementById("dob").value,
+      facultyId: document.getElementById("facultyId").value,
+      address: document.getElementById("address").value,
+      campus: document.getElementById("campus").value,
+      campusName: document.getElementById("campusName").value,
+      bankAccount: document.getElementById("bankAccount").value,
+      ifsc: document.getElementById("ifsc").value,
+      micr: document.getElementById("mirc").value,
+      branchName: document.getElementById("branchName").value,
+      branchAddress: document.getElementById("branchAddress").value,
+      email: document.getElementById("email").value,
+      phone: document.getElementById("phone").value,
+      altPhone: document.getElementById("altPhone").value,
+      qualification: document.getElementById("qualification").value,
+      expertise: document.getElementById("expertise").value
+    };
+
+    const response = await fetch('/signup-details', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(details)
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      alert("Details submitted successfully!");
+      closeExtraSignup();
+    } else {
+      alert(result.message);
+    }
+  }
+</script>
+</body>
 </html>
+
