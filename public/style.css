@@ -1,19 +1,24 @@
-/* GLOBAL RESET */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-  html, body {
-    height: 100%;
-    font-family: 'Segoe UI', sans-serif;
-    background: #f9f9f9;
-  }
-  
-  /* ------------------ HOMEPAGE (index.html) ------------------ */
+html, body {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #f9f9f9;
+}
+
+main {
+  flex: 1;
+}
+
+
+
   
   header {
-    background-color: #007acc;
+    background-color: blue;
     padding: 20px;
     color: white;
     text-align: center;
@@ -44,7 +49,7 @@
     padding: 20px;
     width: 180px;
     text-align: center;
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
     cursor: pointer;
     transition: transform 0.2s ease;
   }
@@ -59,7 +64,6 @@
     margin-bottom: 10px;
   }
   
-  /* LOGIN POPUP */
   .popup {
     display: none;
     position: fixed;
@@ -76,7 +80,7 @@
     border-radius: 10px;
     width: 400px;
     position: relative;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
   }
   
   .popup-content h2 {
@@ -105,13 +109,19 @@
     align-items: center;
     gap: 10px;
     margin: 15px 0;
-    font-size: 16px;
+  }
+  
+  .captcha-section img {
+    height: 50px;
+    width: 200px;
+    object-fit: cover;
+    border: 1px solid #aaa;
   }
   
   .captcha-section .refresh {
     background: none;
     border: none;
-    font-size: 20px;
+    font-size: 24px;
     cursor: pointer;
   }
   
@@ -159,13 +169,12 @@
   }
   
   footer {
-    background: #007acc;
+    background: #003366;
     color: white;
     padding: 20px;
     display: flex;
     justify-content: space-between;
     flex-wrap: wrap;
-    margin-top: auto;
   }
   
   footer a {
@@ -178,95 +187,20 @@
     text-decoration: underline;
   }
   
-  /* ------------------ FACULTY PAGES (dashboard, profile, assignments) ------------------ */
-  
-  .faculty-container {
+  .captcha-section {
     display: flex;
-    height: 100vh;
+    align-items: center;
+    gap: 10px;
+    margin: 15px 0;
+    font-size: 16px;
   }
-  
-  /* Sidebar */
-  .sidebar {
-    width: 220px;
-    background-color: #007acc;
-    color: #fff;
-    padding: 20px;
-  }
-  .sidebar h2 {
-    text-align: center;
-    margin-bottom: 30px;
-    font-size: 1.25rem;
-  }
-  .sidebar ul {
-    list-style: none;
-  }
-  .sidebar ul li {
-    padding: 12px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background 0.2s;
-  }
-  .sidebar ul li:hover {
-    background: rgba(255,255,255,0.2);
-  }
-  
-  /* Main Content */
-  .main-content {
-    flex: 1;
-    padding: 40px;
-    overflow-y: auto;
-    background-color: #f9f9f9;
-  }
-  
-  /* Profile Form */
-  .profile-form label {
-    display: block;
-    margin-top: 16px;
-    font-weight: 600;
-  }
-  .profile-form input {
-    width: 100%;
-    padding: 8px;
-    margin-top: 6px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background: #f0f6ff;
-  }
-  .profile-form button {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background: #4caf50;
-    color: #fff;
+  .captcha-section .refresh {
+    background: none;
     border: none;
-    border-radius: 5px;
+    font-size: 20px;
     cursor: pointer;
   }
-  .profile-form button:hover {
-    background: #3e8e41;
+  .popup-content input {
+    margin-bottom: 10px;
   }
   
-  /* Responsive */
-  @media (max-width: 768px) {
-    .faculty-container {
-      flex-direction: column;
-    }
-    .sidebar {
-      width: 100%;
-    }
-    .main-content {
-      padding: 20px;
-    }
-  }
-
-  
-  .wrapper {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
-  
-  .wrapper main {
-    flex: 1;
-  }
-    
