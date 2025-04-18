@@ -2,29 +2,240 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>View Assignments</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Page - Anna University</title>
+  <style>
+    /* General Body Styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Ensure the body takes full height */
+}
+
+/* Header */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #003366;
+  color: white;
+  padding: 10px 20px;
+}
+
+header h1 {
+  margin-left: 10px;
+  font-size: 24px;
+}
+
+.logo img {
+  border-radius: 50%;
+}
+
+/* Footer */
+footer {
+  background-color: #003366;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  margin-top: auto; /* Push footer to the bottom */
+}
+
+footer a {
+  color: white;
+  text-decoration: none;
+  margin: 0 10px;
+}
+
+/* Dropdown Styles */
+select {
+  margin: 20px;
+  padding: 10px;
+  border-radius: 5px;
+  width: 100%; /* Ensure it doesn't overflow the screen */
+  max-width: 300px; /* Limit max width of the dropdown */
+  box-sizing: border-box; /* Include padding and border in width */
+  font-size: 16px;
+}
+
+select:focus {
+  outline: none; /* Remove focus outline for a cleaner look */
+}
+
+/* Content Styles */
+.content {
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Tables */
+table {
+  margin-top: 20px;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table, th, td {
+  border: 1px solid #ddd;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+}
+
+/* Payment Section */
+.payment {
+  display: none;
+  color: green;
+}
+
+.approved .payment {
+  display: inline-block;
+  font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  select {
+    width: 100%;
+  }
+  table {
+    font-size: 14px;
+  }
+}
+
+  </style>
 </head>
 <body>
-  <div class="faculty-container">
-    <div class="sidebar">
-      <h2>Faculty Panel</h2>
-      <ul>
-        <li onclick="navigate('dashboard')">Dashboard</li>
-        <li onclick="navigate('profile')">Profile</li>
-        <li onclick="navigate('assignments')">View Assignments</li>
-      </ul>
+  <header>
+    <div class="logo">
+      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWldGywAS5je80cyVtFQ7ifg5Sl82slUaE4-sQMlwNXwl53P86XBnO-LRFoqnxXA4afbI&usqp=CAU" alt="Anna Univ Logo" width="80">
+      <h1>ANNA UNIVERSITY - COLLEGE OF ENGINEERING GUINDY</h1>
     </div>
-    <div class="main-content">
-      <h2>View Assignments</h2>
-      <p>This section can be updated to display assignments later.</p>
+  </header>
+
+  <div class="content">
+    <label for="assignment-view">View QP Assignment:</label>
+    <select id="assignment-view" onchange="toggleTables(this.value)">
+      <option value="scrutinies">Scrutinies</option>
+      <option value="setters">Setters</option>
+      <option value="approval">Approval</option>
+    </select>
+
+    <!-- Setters Table -->
+    <div id="setters-table" style="display: none;">
+      <h2>Setters</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>S.No</th>
+            <th>Faculty ID</th>
+            <th>Subject Code</th>
+            <th>Subject Name</th>
+            <th>Year/Sem</th>
+            <th>Status</th>
+            <th>Approved by ACOE</th>
+            <th>Payment</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="approved">
+            <td>1</td>
+            <td>1234</td>
+            <td>CS101</td>
+            <td>Introduction to Computer Science</td>
+            <td>1/1</td>
+            <td>Approved</td>
+            <td>Yes</td>
+            <td class="payment">Paid</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>5678</td>
+            <td>MA101</td>
+            <td>Mathematics</td>
+            <td>1/2</td>
+            <td>Pending</td>
+            <td>No</td>
+            <td class="payment"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Scrutinies Table -->
+    <div id="scrutinies-table" style="display: none;">
+      <h2>Scrutinies</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>S.No</th>
+            <th>Faculty ID</th>
+            <th>Subject Code</th>
+            <th>Subject Name</th>
+            <th>Year/Sem</th>
+            <th>Status</th>
+            <th>Approved by ACOE</th>
+            <th>Payment</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="approved">
+            <td>1</td>
+            <td>2345</td>
+            <td>PH101</td>
+            <td>Physics</td>
+            <td>1/1</td>
+            <td>Approved</td>
+            <td>Yes</td>
+            <td class="payment">Paid</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>6789</td>
+            <td>CH101</td>
+            <td>Chemistry</td>
+            <td>1/2</td>
+            <td>Pending</td>
+            <td>No</td>
+            <td class="payment"></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
+  <footer>
+    <div class="contact">
+      <p>Email: <a href="mailto:info@annauniv.edu">info@annauniv.edu</a></p>
+      <p>Phone: +91-44-2235-7004</p>
+    </div>
+    <div class="social">
+      <a href="#">Facebook</a>
+      <a href="#">LinkedIn</a>
+      <a href="#">Twitter</a>
+    </div>
+  </footer>
+
   <script>
-    function navigate(page) {
-      window.location.href = page + '.html';
+    function toggleTables(value) {
+      // Hide all tables
+      document.getElementById('setters-table').style.display = 'none';
+      document.getElementById('scrutinies-table').style.display = 'none';
+
+      // Show the selected table
+      if (value === 'setters') {
+        document.getElementById('setters-table').style.display = 'block';
+      } else if (value === 'scrutinies') {
+        document.getElementById('scrutinies-table').style.display = 'block';
+      }
     }
   </script>
 </body>

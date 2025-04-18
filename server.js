@@ -24,10 +24,11 @@ mongoose.connection.on('error', (err) => {
   console.log('MongoDB connection error:', err);
 });
 
-// Basic login user schema
+// Basic login user schema with role
 const userSchema = new mongoose.Schema({
   username: String,
-  password: String // Storing plain password (not recommended for production)
+  password: String,  // Storing plain password (not recommended for production)
+  role: String       // Role of the user (e.g., 'admin', 'faculty', 'student')
 });
 
 // Extended faculty details schema
@@ -59,14 +60,14 @@ const ExtraDetails = mongoose.model('ExtraDetails', extraDetailsSchema);
 
 // Signup route
 app.post('/signup', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, role } = req.body; // Accept 'role' from the request body
 
   const existingUser = await User.findOne({ username });
   if (existingUser) {
     return res.status(400).json({ message: 'User already exists' });
   }
 
-  const user = new User({ username, password });
+  const user = new User({ username, password, role }); // Save the role with the user
 
   try {
     await user.save();
@@ -108,19 +109,21 @@ app.post('/signup-details', async (req, res) => {
 
 // Login route with CAPTCHA validation
 app.post('/login', async (req, res) => {
-  const { username, password, sum, expectedSum } = req.body;
+  const { username, password, role, sum, expectedSum } = req.body;
 
-  const user = await User.findOne({ username, password });
+  // Check if user exists with the username, password, and role
+  const user = await User.findOne({ username, password, role });
 
   if (!user) {
-    return res.status(401).json({ message: 'Invalid username or password' });
+    return res.status(401).json({ message: 'Invalid username, password, or role' });
   }
 
+  // CAPTCHA validation
   if (parseInt(sum) !== parseInt(expectedSum)) {
     return res.status(401).json({ message: 'CAPTCHA incorrect' });
   }
 
-  res.status(200).json({ message: `Welcome, ${username}! Login successful.` });
+  res.status(200).json({ message: `Welcome, ${username} (${role})! Login successful.` });
 });
 
 // View all extra details
@@ -142,4 +145,3 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
-

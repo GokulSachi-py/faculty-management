@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Faculty Dashboard - CEG</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #f4f4f4;
+    }
+    header {
+      background-color: #004080;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    main {
+      padding: 20px;
+    }
+    .dashboard-card {
+      background-color: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .logout-btn {
+      background-color: #d9534f;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      float: right;
+      cursor: pointer;
+    }
+    .logout-btn:hover {
+      background-color: #c9302c;
+    }
+    .card-title {
+      margin-top: 0;
+    }
+    footer {
+      background-color: #eee;
+      text-align: center;
+      padding: 10px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Faculty Dashboard - College of Engineering Guindy</h1>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+</header>
+
+<main>
+  <div class="dashboard-card">
+    <h2 class="card-title">Welcome, Faculty Member!</h2>
+    <p>This is your dashboard where you can manage your profile, view schedules, and handle academic responsibilities.</p>
+  </div>
+
+  <div class="dashboard-card">
+    <h3>Quick Links</h3>
+    <ul>
+      <li><a href="#">View Class Schedule</a></li>
+      <li><a href="#">Upload Grades</a></li>
+      <li><a href="#">Edit Profile</a></li>
+      <li><a href="#">Faculty Handbook</a></li>
+    </ul>
+  </div>
+</main>
+
+<footer>
+  &copy; 2025 Anna University - CEG. All rights reserved.
+</footer>
+
+<script>
+  function logout() {
+    // Optional: clear session/localStorage
+    localStorage.clear();
+    alert("Logged out successfully!");
+    window.location.href = "index.html"; // Back to login
+  }
+</script>
+
+</body>
+</html>
