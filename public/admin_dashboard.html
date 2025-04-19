@@ -1,46 +1,419 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <title>Admin Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - College of Engineering Guindy</title>
+  <style>
+    /* Your Existing CSS */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa;
+      display: flex;
+      height: 100vh;
+    }
+
+    .sidebar {
+      width: 250px;
+      height: 100vh;
+      background-color: #0f83ff;
+      color: white;
+      position: fixed;
+      top: 0;
+      left: 0;
+      padding: 20px;
+      overflow-y: auto;
+      transition: all 0.3s ease;
+    }
+
+    .sidebar.collapsed {
+      width: 50px;
+      padding: 20px;
+      color: transparent;
+      overflow: hidden;
+    }
+
+    .sidebar.collapsed ul,
+    .sidebar.collapsed h2 {
+      display: none;
+    }
+
+    .sidebar h2 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .sidebar ul li {
+      margin: 20px 0;
+    }
+
+    .sidebar ul li a {
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+      display: block;
+    }
+
+    .sidebar ul li a.active {
+      font-weight: bold;
+    }
+
+    .content-wrapper {
+      margin-left: 250px;
+      padding: 20px;
+      transition: margin-left 0.3s ease;
+      width: 100%;
+      max-width: 1200px;
+      margin-right: 20px;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+
+    /* When Sidebar is Collapsed, Center Content */
+    .content-wrapper.collapsed {
+      margin-left: 50px;
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .content {
+      width: 100%;
+      max-width: 1200px;
+      text-align: center;
+    }
+
+    .content h1 {
+      font-size: 32px;
+      margin-bottom: 20px;
+    }
+
+    .feature-card,
+    .admin-info-card {
+      background-color: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .hidden-section {
+      display: none;
+    }
+
+    .toggle-sidebar-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      background-color: #0f83ff;
+      padding: 10px;
+      border-radius: 50%;
+    }
+
+    .question-paper-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .question-paper-table th,
+    .question-paper-table td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .question-paper-table th {
+      background-color: #0f83ff;
+      color: white;
+    }
+
+    #add-faculty-button {
+      margin-top: 15px;
+      background-color: #0f83ff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .input-field {
+      width: 90%;
+      padding: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .save-button {
+      margin: 5px;
+      padding: 8px 12px;
+      background-color: #0f83ff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .save-button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+    }
+
+    .form-container {
+      margin-top: 20px;
+    }
+
+    .logout-link {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: red;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .logout-link:hover {
+      background-color: darkred;
+    }
+  </style>
 </head>
+
 <body>
 
-  <div class="navbar">
-    <div class="logo">Admin Dashboard</div>
-    <a href="/logout" class="btn">Logout</a>
+  <div class="sidebar">
+    <h2>Admin Panel</h2>
+    <ul>
+      <li><a href="#question-paper-assigner-content" onclick="showSection('question-paper-assigner-content', this)">Question Paper Assigner</a></li>
+      <li><a href="#admin-info-content" onclick="showSection('admin-info-content', this)">Admin Info</a></li>
+    </ul>
   </div>
 
-  <div class="container">
-    <h1>Welcome, Admin!</h1>
+  <!-- Logout Button -->
+  <a href="/logout" onclick="return confirmLogout()" class="logout-link">Logout</a>
 
-    <div class="grid">
-      <div class="card">
-        <h3><i class="fas fa-users"></i> Manage Users</h3>
-        <p>View, edit or delete users registered on the platform.</p>
-        <a href="#" class="btn">Manage Users</a>
+  <button class="toggle-sidebar-btn" onclick="toggleSidebar()">☰</button>
+
+  <div class="content-wrapper">
+    <div class="content">
+      <h1>Admin Dashboard</h1>
+
+      <div id="question-paper-assigner-content" class="feature-card" style="margin-left: 30px;">
+        <h3>Question Paper Assigner</h3>
+        <p>Manage faculty assignments for question paper setting and scrutiny.</p>
+        <table class="question-paper-table">
+          <thead>
+            <tr>
+              <th>Serial No</th>
+              <th>Faculty ID</th>
+              <th>Faculty Name</th>
+              <th>Subject Code</th>
+              <th>Subject Name</th>
+              <th>Number of Questions</th>
+              <th>Regulation</th>
+              <th>Role</th>
+              <th>Save</th> <!-- Save button header -->
+            </tr>
+          </thead>
+          <tbody id="faculty-table-body"></tbody>
+        </table>
+        <button id="add-faculty-button" onclick="addRow()">Add New Faculty</button>
       </div>
 
-      <div class="card">
-        <h3><i class="fas fa-file-alt"></i> View Reports</h3>
-        <p>Check reports submitted by users or generated by system.</p>
-        <a href="#" class="btn">View Reports</a>
-      </div>
-
-      <div class="card">
-        <h3><i class="fas fa-cogs"></i> System Settings</h3>
-        <p>Configure system settings and preferences.</p>
-        <a href="#" class="btn">Settings</a>
-      </div>
-
-      <div class="card">
-        <h3><i class="fas fa-chart-line"></i> Analytics</h3>
-        <p>See site usage and analytics dashboard.</p>
-        <a href="#" class="btn">View Analytics</a>
-      </div>
     </div>
   </div>
 
+  <script>
+    const facultyTableBody = document.getElementById('faculty-table-body');
+    let rowCounter = 1;
+
+    // Load saved data from localStorage when the page is loaded
+    document.addEventListener('DOMContentLoaded', loadFacultyData);
+
+    function confirmLogout() {
+      return confirm("Do you want to logout?");
+    }
+
+    function showSection(sectionId, clickedLink) {
+      document.querySelectorAll('.feature-card, .admin-info-card').forEach(section => {
+        section.classList.add('hidden-section');
+      });
+      document.getElementById(sectionId).classList.remove('hidden-section');
+      document.querySelectorAll('.sidebar a').forEach(link => link.classList.remove('active'));
+      clickedLink.classList.add('active');
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const contentWrapper = document.querySelector('.content-wrapper');
+      sidebar.classList.toggle('collapsed');
+      contentWrapper.classList.toggle('collapsed');
+    }
+
+    function addRow() {
+      const newRow = facultyTableBody.insertRow();
+      newRow.innerHTML = 
+        `<td>${rowCounter++}</td>
+        <td><input class="input-field" type="text" placeholder="Faculty ID"></td>
+        <td><input class="input-field" type="text" placeholder="Faculty Name"></td>
+        <td><input class="input-field" type="text" placeholder="Subject Code"></td>
+        <td><input class="input-field" type="text" placeholder="Subject Name"></td>
+        <td><input class="input-field" type="number" placeholder="No. of Questions"></td>
+        <td>
+          <select class="input-field">
+            <option value="R2017">R2017</option>
+            <option value="R2021">R2021</option>
+          </select>
+        </td>
+        <td>
+          <select class="input-field">
+            <option value="Assigner">Assigner</option>
+            <option value="Scrutiny">Scrutiny</option>
+          </select>
+        </td>`;
+
+      // Add Save Button
+      const saveButtonCell = newRow.insertCell();
+      const saveButton = document.createElement('button');
+      saveButton.innerText = 'Save';
+      saveButton.className = 'save-button';
+      saveButton.onclick = function () {
+        saveRow(newRow, saveButton);
+      };
+      saveButtonCell.appendChild(saveButton);
+    }
+
+    function saveRow(row, button) {
+      const cells = row.querySelectorAll('td');
+      let hasEmptyField = false;
+
+      cells.forEach(cell => {
+        const input = cell.querySelector('input');
+        const select = cell.querySelector('select');
+        if (input && input.value.trim() === '') {
+          hasEmptyField = true;
+        }
+        if (select && select.value.trim() === '') {
+          hasEmptyField = true;
+        }
+      });
+
+      if (hasEmptyField) {
+        alert('Please fill all the fields before saving.');
+        return;
+      }
+
+      // Save data in localStorage
+      let facultyData = JSON.parse(localStorage.getItem('facultyData')) || [];
+      const rowData = [];
+      cells.forEach(cell => {
+        const input = cell.querySelector('input');
+        const select = cell.querySelector('select');
+        if (input) {
+          rowData.push(input.value);
+        } else if (select) {
+          rowData.push(select.options[select.selectedIndex].text);
+        }
+      });
+
+      facultyData.push(rowData);
+      localStorage.setItem('facultyData', JSON.stringify(facultyData));
+
+      // Update the table with the saved data
+      cells.forEach((cell, index) => {
+        const input = cell.querySelector('input');
+        const select = cell.querySelector('select');
+        if (input) {
+          cell.innerText = input.value;
+        } else if (select) {
+          cell.innerText = select.options[select.selectedIndex].text;
+        }
+      });
+
+      button.style.display = 'none'; // Hide Save button after saving
+    }
+
+    function loadFacultyData() {
+      let facultyData = JSON.parse(localStorage.getItem('facultyData')) || [];
+      facultyData.forEach((data, index) => {
+        const newRow = facultyTableBody.insertRow();
+        data.forEach((value, idx) => {
+          const newCell = newRow.insertCell(idx);
+          newCell.innerText = value;
+        });
+
+        // Add Save Button
+        const saveButtonCell = newRow.insertCell(data.length);
+        const saveButton = document.createElement('button');
+        saveButton.innerText = 'Save';
+        saveButton.className = 'save-button';
+        saveButton.disabled = true; // Disable the Save button as it's already saved
+        saveButtonCell.appendChild(saveButton);
+      });
+    }
+
+    async function validateAdminLogin() {
+    const username = document.getElementById("adminUsername").value.trim();
+    const password = document.getElementById("adminPassword").value.trim();
+    const adminSum = parseInt(document.getElementById("adminSum").value);
+
+    if (!username || !password || isNaN(adminSum)) {
+        alert("Please fill in all fields and complete the captcha.");
+        return;
+    }
+
+    if (adminSum !== num1 + num2) {
+        alert("Captcha validation failed! Please try again.");
+        generateAdminNumbers();
+        return;
+    }
+
+    try {
+        const response = await fetch('/admin_login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+
+        if (!response.ok) {
+            // If response is not 2xx, still try to parse error JSON
+            const errorData = await response.json();
+            alert(errorData.message || "Admin login failed");
+            generateAdminNumbers();
+            return;
+        }
+
+        const data = await response.json();
+        alert(data.message);
+        window.location.href = 'admin_dashboard.html';
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Something went wrong while logging in.');
+        generateAdminNumbers();
+    }
+}
+
+  </script>
+
 </body>
+
 </html>

@@ -1,346 +1,350 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Anna University - CEG</title>
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    .error-border {
-      border: 2px solid red;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anna University - CEG</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .error-border {
+            border: 2px solid red;
+        }
+    </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">
-    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWldGywAS5je80cyVtFQ7ifg5Sl82slUaE4-sQMlwNXwl53P86XBnO-LRFoqnxXA4afbI&usqp=CAU" alt="Anna Univ Logo" width="80">
-    <h1>ANNA UNIVERSITY - COLLEGE OF ENGINEERING GUINDY</h1>
-  </div>
+    <div class="logo">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWldGywAS5je80cyVtFQ7ifg5Sl82slUaE4-sQMlwNXwl53P86XBnO-LRFoqnxXA4afbI&usqp=CAU" alt="Anna Univ Logo" width="80">
+        <h1>ANNA UNIVERSITY - COLLEGE OF ENGINEERING GUINDY</h1>
+    </div>
 </header>
 
 <main>
-  <section class="login-options">
-    <div class="option" onclick="showLogin('Faculty')">
-      <img src="https://cdn-icons-png.flaticon.com/512/3062/3062634.png" alt="Faculty">
-      <h3>Faculty Login</h3>
-    </div>
-    <div class="option" onclick="showLogin('Admin')">
-      <img src="https://cdn-icons-png.flaticon.com/512/2920/2920024.png" alt="Admin">
-      <h3>Admin Login</h3>
-    </div>
-  </section>
-
-  <!-- Faculty Login Popup -->
-  <div id="facultyLoginPopup" class="popup">
-    <div class="popup-content">
-      <span id="closeFacultyBtn" onclick="closeLogin()">&times;</span>
-      <h2>Faculty Login</h2>
-
-      <label>Username</label>
-      <input type="text" id="username" placeholder="Enter Username">
-
-      <label>Password</label>
-      <input type="password" id="password" placeholder="Enter Password">
-
-      <div class="captcha-section">
-        <span id="facNum1">0</span> + <span id="facNum2">0</span> =
-        <input type="number" id="userSum" placeholder="Enter Sum" style="width: 80px; margin-left: 10px;">
-        <button class="refresh" onclick="generateFacultyNumbers()">⟳</button>
-      </div>
-
-      <div class="button-group">
-        <a href="#" class="forgot">Forgot Password?</a>
-        <div class="action-buttons">
-          <button class="signup" onclick="handleSignup()">Sign Up</button>
-          <button class="login" onclick="validateFacultyLogin()">Login</button>
+    <section class="login-options">
+        <div class="option" onclick="showLogin('Faculty')">
+            <img src="https://cdn-icons-png.flaticon.com/512/3062/3062634.png" alt="Faculty">
+            <h3>Faculty Login</h3>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Admin Login Popup -->
-  <div id="adminLoginPopup" class="popup">
-    <div class="popup-content">
-      <span id="closeAdminBtn" onclick="closeAdminLogin()">&times;</span>
-      <h2>Admin Login</h2>
-
-      <label>Username</label>
-      <input type="text" id="adminUsername" placeholder="Enter Username">
-
-      <label>Password</label>
-      <input type="password" id="adminPassword" placeholder="Enter Password">
-
-      <div class="captcha-section">
-        <span id="adminNum1">0</span> + <span id="adminNum2">0</span> =
-        <input type="number" id="adminSum" placeholder="Enter Sum" style="width: 80px; margin-left: 10px;">
-        <button class="refresh" onclick="generateAdminNumbers()">⟳</button>
-      </div>
-
-      <div class="button-group">
-        <a href="#" class="forgot">Forgot Password?</a>
-        <div class="action-buttons">
-          <button class="login" onclick="validateAdminLogin()">Login</button>
+        <div class="option" onclick="showLogin('Admin')">
+            <img src="https://cdn-icons-png.flaticon.com/512/2920/2920024.png" alt="Admin">
+            <h3>Admin Login</h3>
         </div>
-      </div>
+    </section>
+
+    <div id="facultyLoginPopup" class="popup">
+        <div class="popup-content">
+            <span id="closeFacultyBtn" onclick="closeLogin()">&times;</span>
+            <h2>Faculty Login</h2>
+
+            <label>Username</label>
+            <input type="text" id="username" placeholder="Enter Username">
+
+            <label>Password</label>
+            <input type="password" id="password" placeholder="Enter Password">
+
+            <div class="captcha-section">
+                <span id="facNum1">0</span> + <span id="facNum2">0</span> =
+                <input type="number" id="userSum" placeholder="Enter Sum" style="width: 80px; margin-left: 10px;">
+                <button class="refresh" onclick="generateFacultyNumbers()">⟳</button>
+            </div>
+
+            <div class="button-group">
+                <a href="#" class="forgot">Forgot Password?</a>
+                <div class="action-buttons">
+                    <button class="signup" onclick="handleSignup()">Sign Up</button>
+                    <button class="login" onclick="validateFacultyLogin()">Login</button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- Extended Sign Up Popup -->
-  <div id="extraSignupPopup" class="popup">
-    <div class="popup-content" style="max-height: 90vh; overflow-y: auto;">
-      <span onclick="closeExtraSignup()" id="closeExtraBtn">&times;</span>
-      <h2>Extended Signup - Faculty</h2>
+    <div id="adminLoginPopup" class="popup">
+        <div class="popup-content">
+            <span id="closeAdminBtn" onclick="closeAdminLogin()">&times;</span>
+            <h2>Admin Login</h2>
 
-      <!-- Basic Details -->
-      <label>Full Name</label>
-      <input type="text" id="fullName">
+            <label>Username</label>
+            <input type="text" id="adminUsername" placeholder="Enter Username">
 
-      <label>Date of Birth</label>
-      <input type="date" id="dob">
+            <label>Password</label>
+            <input type="password" id="adminPassword" placeholder="Enter Password">
 
-      <label>Faculty ID</label>
-      <input type="text" id="facultyId">
+            <div class="captcha-section">
+                <span id="adminNum1">0</span> + <span id="adminNum2">0</span> =
+                <input type="number" id="adminSum" placeholder="Enter Sum" style="width: 80px; margin-left: 10px;">
+                <button class="refresh" onclick="generateAdminNumbers()">⟳</button>
+            </div>
 
-      <label>Permanent Address</label>
-      <textarea id="address"></textarea>
-
-      <label>Campus</label>
-      <select id="campus">
-        <option value="">-- Select Campus --</option>
-        <option value="CEG">CEG</option>
-        <option value="MIT">MIT</option>
-        <option value="ACT">ACT</option>
-        <option value="SAP">SAP</option>
-      </select>
-
-      <label>Campus Name</label>
-      <input type="text" id="campusName">
-
-      <hr><h3>Personal Details</h3>
-
-      <label>Email</label>
-      <input type="email" id="email">
-
-      <label>Phone Number</label>
-      <input type="text" id="phone">
-
-      <label>Alternative Phone Number</label>
-      <input type="text" id="altPhone">
-
-      <hr><h3>Banking Details</h3>
-
-      <label>Bank Account Number</label>
-      <input type="text" id="bankAccount">
-
-      <label>IFSC Code</label>
-      <input type="text" id="ifsc">
-
-      <label>MIRC Code</label>
-      <input type="text" id="mirc">
-
-      <label>Branch Name</label>
-      <input type="text" id="branchName">
-
-      <label>Branch Address</label>
-      <textarea id="branchAddress"></textarea>
-
-      <hr><h3>Academic Details</h3>
-
-      <label>Qualification</label>
-      <select id="qualification">
-        <option value="">-- Select Qualification --</option>
-        <option value="B.E">B.E</option>
-        <option value="M.E">M.E</option>
-      </select>
-
-      <label>Expertise In</label>
-      <input type="text" id="expertise">
-
-      <button class="login" onclick="submitExtraDetails()">Submit</button>
-      <button class="signup" style="margin-top: 10px;" onclick="resetExtraDetailsForm()">Reset</button>
+            <div class="button-group">
+                <a href="#" class="forgot">Forgot Password?</a>
+                <div class="action-buttons">
+                    <button class="login" onclick="validateAdminLogin()">Login</button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
+
+    <div id="extraSignupPopup" class="popup">
+        <div class="popup-content" style="max-height: 90vh; overflow-y: auto;">
+            <span onclick="closeExtraSignup()" id="closeExtraBtn">&times;</span>
+            <h2>Extended Signup - Faculty</h2>
+
+            <label>Full Name</label>
+            <input type="text" id="fullName">
+
+            <label>Date of Birth</label>
+            <input type="date" id="dob">
+
+            <label>Faculty ID</label>
+            <input type="text" id="facultyId">
+
+            <label>Permanent Address</label>
+            <textarea id="address"></textarea>
+
+            <label>Campus</label>
+            <select id="campus">
+                <option value="">-- Select Campus --</option>
+                <option value="CEG">CEG</option>
+                <option value="MIT">MIT</option>
+                <option value="ACT">ACT</option>
+                <option value="SAP">SAP</option>
+            </select>
+
+            <label>Campus Name</label>
+            <input type="text" id="campusName">
+
+            <hr><h3>Personal Details</h3>
+
+            <label>Email</label>
+            <input type="email" id="email">
+
+            <label>Phone Number</label>
+            <input type="text" id="phone">
+
+            <label>Alternative Phone Number</label>
+            <input type="text" id="altPhone">
+
+            <hr><h3>Banking Details</h3>
+
+            <label>Bank Account Number</label>
+            <input type="text" id="bankAccount">
+
+            <label>IFSC Code</label>
+            <input type="text" id="ifsc">
+
+            <label>MIRC Code</label>
+            <input type="text" id="mirc">
+
+            <label>Branch Name</label>
+            <input type="text" id="branchName">
+
+            <label>Branch Address</label>
+            <textarea id="branchAddress"></textarea>
+
+            <hr><h3>Academic Details</h3>
+
+            <label>Qualification</label>
+            <select id="qualification">
+                <option value="">-- Select Qualification --</option>
+                <option value="B.E">B.E</option>
+                <option value="M.E">M.E</option>
+            </select>
+
+            <label>Expertise In</label>
+            <input type="text" id="expertise">
+
+            <button class="login" onclick="submitExtraDetails()">Submit</button>
+            <button class="signup" style="margin-top: 10px;" onclick="resetExtraDetailsForm()">Reset</button>
+        </div>
+    </div>
 </main>
 
 <footer>
-  <div class="contact">
-    <p>Email: <a href="mailto:info@annauniv.edu">info@annauniv.edu</a></p>
-    <p>Phone: +91-44-2235-7004</p>
-  </div>
-  <div class="social">
-    <a href="#">Facebook</a>
-    <a href="#">LinkedIn</a>
-    <a href="#">Twitter</a>
-  </div>
+    <div class="contact">
+        <p>Email: <a href="mailto:info@annauniv.edu">info@annauniv.edu</a></p>
+        <p>Phone: +91-44-2235-7004</p>
+    </div>
+    <div class="social">
+        <a href="#">Facebook</a>
+        <a href="#">LinkedIn</a>
+        <a href="#">Twitter</a>
+    </div>
 </footer>
 
 <script>
-  let num1 = 0, num2 = 0;
+    let num1 = 0, num2 = 0;
 
-  function showLogin(role) {
-    if (role === "Faculty") {
-      document.getElementById('facultyLoginPopup').style.display = 'flex';
-      generateFacultyNumbers();
-    } else if (role === "Admin") {
-      document.getElementById('adminLoginPopup').style.display = 'flex';
-      generateAdminNumbers();
-    }
-  }
-
-  function closeLogin() {
-    document.getElementById('facultyLoginPopup').style.display = 'none';
-  }
-
-  function closeAdminLogin() {
-    document.getElementById('adminLoginPopup').style.display = 'none';
-  }
-
-  function generateFacultyNumbers() {
-    num1 = Math.floor(Math.random() * 100) + 1;
-    num2 = Math.floor(Math.random() * 100) + 1;
-    document.getElementById("facNum1").innerText = num1;
-    document.getElementById("facNum2").innerText = num2;
-    document.getElementById("userSum").value = '';
-  }
-
-  function generateAdminNumbers() {
-    num1 = Math.floor(Math.random() * 100) + 1;
-    num2 = Math.floor(Math.random() * 100) + 1;
-    document.getElementById("adminNum1").innerText = num1;
-    document.getElementById("adminNum2").innerText = num2;
-    document.getElementById("adminSum").value = '';
-  }
-
-  async function validateFacultyLogin() {
-    const username = document.getElementById("username").value.trim();
-    const password = document.getElementById("password").value.trim();
-    const userSum = parseInt(document.getElementById("userSum").value);
-
-    const response = await fetch('/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, sum: userSum, expectedSum: num1 + num2 })
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      alert(data.message);
-      window.location.href = 'faculty_dashboard.html';
-    } else {
-      alert(data.message);
-      generateFacultyNumbers();
-    }
-  }
-
-  async function validateAdminLogin() {
-    const username = document.getElementById("adminUsername").value.trim();
-    const password = document.getElementById("adminPassword").value.trim();
-    const adminSum = parseInt(document.getElementById("adminSum").value);
-
-    if (!username || !password || isNaN(adminSum)) {
-      alert("Please fill in all fields and complete the captcha.");
-      return;
+    function showLogin(role) {
+        if (role === "Faculty") {
+            document.getElementById('facultyLoginPopup').style.display = 'flex';
+            generateFacultyNumbers();
+        } else if (role === "Admin") {
+            document.getElementById('adminLoginPopup').style.display = 'flex';
+            generateAdminNumbers();
+        }
     }
 
-    if (adminSum !== num1 + num2) {
-      alert("Captcha validation failed! Please try again.");
-      generateAdminNumbers();
-      return;
+    function closeLogin() {
+        document.getElementById('facultyLoginPopup').style.display = 'none';
     }
 
-    if (username === "ADMIN" && password === "admin@CEG") {
-      alert("Admin Login Successful!");
-      window.location.href = 'dashboard.html';
-    } else {
-      alert("Invalid credentials. Please try again.");
-      generateAdminNumbers();
-    }
-  }
-
-  async function handleSignup() {
-    const username = document.getElementById("username").value.trim();
-    const password = document.getElementById("password").value.trim();
-
-    if (!username || !password) {
-      alert("Username and password cannot be empty.");
-      return;
+    function closeAdminLogin() {
+        document.getElementById('adminLoginPopup').style.display = 'none';
     }
 
-    const response = await fetch('/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-
-    const data = await response.json();
-    if (response.ok) {
-      alert("Signup successful! Please fill in additional details.");
-      localStorage.setItem('username', username);
-      document.getElementById('facultyLoginPopup').style.display = 'none';
-      document.getElementById('extraSignupPopup').style.display = 'flex';
-    } else {
-      alert(data.message);
-    }
-  }
-
-  function closeExtraSignup() {
-    document.getElementById('extraSignupPopup').style.display = 'none';
-  }
-
-  function resetExtraDetailsForm() {
-    const fields = document.querySelectorAll('#extraSignupPopup input, #extraSignupPopup select, #extraSignupPopup textarea');
-    fields.forEach(field => {
-      field.value = '';
-      field.classList.remove('error-border');
-    });
-  }
-
-  function validateRequiredFields(fields) {
-    let isValid = true;
-    fields.forEach(field => {
-      if (!field.value.trim()) {
-        field.classList.add('error-border');
-        isValid = false;
-      } else {
-        field.classList.remove('error-border');
-      }
-    });
-    return isValid;
-  }
-
-  async function submitExtraDetails() {
-    const username = localStorage.getItem('username');
-    const formFields = [
-      "fullName", "dob", "facultyId", "address", "campus", "campusName",
-      "bankAccount", "ifsc", "mirc", "branchName", "branchAddress",
-      "email", "phone", "altPhone", "qualification", "expertise"
-    ].map(id => document.getElementById(id));
-
-    if (!validateRequiredFields(formFields)) {
-      alert("Please fill in all required fields.");
-      return;
+    function generateFacultyNumbers() {
+        num1 = Math.floor(Math.random() * 100) + 1;
+        num2 = Math.floor(Math.random() * 100) + 1;
+        document.getElementById("facNum1").innerText = num1;
+        document.getElementById("facNum2").innerText = num2;
+        document.getElementById("userSum").value = '';
     }
 
-    const details = Object.fromEntries(formFields.map(f => [f.id, f.value]));
-    details.username = username;
-
-    const response = await fetch('/signup-details', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(details)
-    });
-
-    const result = await response.json();
-    if (response.ok) {
-      alert("Details submitted successfully!");
-      closeExtraSignup();
-    } else {
-      alert(result.message);
+    function generateAdminNumbers() {
+        num1 = Math.floor(Math.random() * 100) + 1;
+        num2 = Math.floor(Math.random() * 100) + 1;
+        document.getElementById("adminNum1").innerText = num1;
+        document.getElementById("adminNum2").innerText = num2;
+        document.getElementById("adminSum").value = '';
     }
-  }
+
+    async function validateFacultyLogin() {
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+        const userSum = parseInt(document.getElementById("userSum").value);
+
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, sum: userSum, expectedSum: num1 + num2, role: 'Faculty' })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert(data.message);
+            window.location.href = 'faculty_dashboard.html';
+        } else {
+            alert(data.message);
+            generateFacultyNumbers();
+        }
+    }
+
+    async function validateAdminLogin() {
+        const username = document.getElementById("adminUsername").value.trim();
+        const password = document.getElementById("adminPassword").value.trim();
+        const adminSum = parseInt(document.getElementById("adminSum").value);
+
+        if (!username || !password || isNaN(adminSum)) {
+            alert("Please fill in all fields and complete the captcha.");
+            return;
+        }
+
+        if (adminSum !== num1 + num2) {
+            alert("Captcha validation failed! Please try again.");
+            generateAdminNumbers();
+            return;
+        }
+
+        const response = await fetch('/admin_login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert(data.message);
+            window.location.href = 'admin_dashboard.html'; // ENSURE THIS IS CORRECT
+        } else {
+            alert(data.message);
+            generateAdminNumbers();
+        }
+    }
+
+    async function handleSignup() {
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+
+        if (!username || !password) {
+            alert("Username and password cannot be empty.");
+            return;
+        }
+
+        const response = await fetch('/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, role: 'Faculty' })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            alert("Signup successful! Please fill in additional details.");
+            localStorage.setItem('username', username);
+            document.getElementById('facultyLoginPopup').style.display = 'none';
+            document.getElementById('extraSignupPopup').style.display = 'flex';
+        } else {
+            alert(data.message);
+        }
+    }
+
+    function closeExtraSignup() {
+        document.getElementById('extraSignupPopup').style.display = 'none';
+    }
+
+    function resetExtraDetailsForm() {
+        const fields = document.querySelectorAll('#extraSignupPopup input, #extraSignupPopup select, #extraSignupPopup textarea');
+        fields.forEach(field => {
+            field.value = '';
+            field.classList.remove('error-border');
+        });
+    }
+
+    function validateRequiredFields(fields) {
+        let isValid = true;
+        fields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add('error-border');
+                isValid = false;
+            } else {
+                field.classList.remove('error-border');
+            }
+        });
+        return isValid;
+    }
+
+    async function submitExtraDetails() {
+        const username = localStorage.getItem('username');
+        const formFields = [
+            "fullName", "dob", "facultyId", "address", "campus", "campusName",
+            "bankAccount", "ifsc", "mirc", "branchName", "branchAddress",
+            "email", "phone", "altPhone", "qualification", "expertise"
+        ].map(id => document.getElementById(id));
+
+        if (!validateRequiredFields(formFields)) {
+            alert("Please fill in all required fields.");
+            return;
+        }
+
+        const details = Object.fromEntries(formFields.map(f => [f.id, f.value]));
+        details.username = username;
+
+        const response = await fetch('/signup-details', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(details)
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+            alert("Details submitted successfully!");
+            closeExtraSignup();
+        } else {
+            alert(result.message);
+        }
+    }
 </script>
 
 </body>
