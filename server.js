@@ -35,10 +35,9 @@ mongoose.connection.on('error', (err) => {
 const userSchema = new mongoose.Schema({
     username: { type: String, unique: true },
     password: String,
-    role: String,
-    facultyId: { type: String, unique: true, sparse: true } // ✅ Added this line
+    role: { type: String, default: 'faculty' },
+    facultyId: String
 });
-
 
 const extraDetailsSchema = new mongoose.Schema({
     username: { type: String, unique: true },
@@ -85,9 +84,7 @@ const ExtraDetails = mongoose.model('ExtraDetails', extraDetailsSchema);
 const FacultyAssignment = mongoose.model('FacultyAssignment', facultyAssignmentSchema);
 const QuestionAssigner = mongoose.model('QuestionAssigner', questionAssignerSchema);
 
-// Routes
-
-// 🛠 Faculty Assignment Saving
+// Faculty Assignment Saving
 app.post('/save-faculty-assignment', async (req, res) => {
     const { facultyId, facultyName, subjectCode, subjectName, numberOfQuestions, regulation, role } = req.body;
 
@@ -114,7 +111,6 @@ app.post('/save-faculty-assignment', async (req, res) => {
     try {
         await newFacultyAssignment.save();
 
-        // Update ExtraDetails to reflect the assignment
         await ExtraDetails.updateOne(
             { facultyId },
             { $set: { assignedSubject: subjectName, isAssigned: true } }
@@ -127,7 +123,6 @@ app.post('/save-faculty-assignment', async (req, res) => {
     }
 });
 
-// 🧑‍🏫 Fetch Faculty Assignments
 app.get('/api/faculty-assignments', async (req, res) => {
     try {
         const assignments = await FacultyAssignment.find({});
@@ -156,9 +151,8 @@ app.get('/get-faculty-assignment-status', async (req, res) => {
     });
 });
 
-// 🖋️ Update Faculty Assignment Response
 app.post('/update-faculty-assignment', async (req, res) => {
-    const { response } = req.body;  // 'yes' or 'no'
+    const { response } = req.body;
     const facultyId = req.session.user.facultyId;
 
     const extraDetails = await ExtraDetails.findOne({ facultyId });
@@ -167,18 +161,15 @@ app.post('/update-faculty-assignment', async (req, res) => {
     }
 
     if (response === 'no') {
-        // Update the status to reflect the faculty declined the assignment
         await ExtraDetails.updateOne({ facultyId }, { $set: { isAssigned: false, assignedSubject: '' } });
         res.status(200).json({ message: 'You have declined the assignment.', response });
     } else if (response === 'yes') {
-        // Faculty accepted the assignment
         res.status(200).json({ message: 'You have accepted the assignment.', response });
     } else {
         res.status(400).json({ message: 'Invalid response' });
     }
 });
 
-// 🧹 Remove Faculty Assignment
 app.post('/remove-faculty-assignment', async (req, res) => {
     const { facultyId } = req.body;
 
@@ -200,44 +191,61 @@ app.post('/remove-faculty-assignment', async (req, res) => {
     }
 });
 
-app.post('/signup', async (req, res) => {
-    const {
-        username, password, role, facultyId, fullName, dob,
-        address, campus, campusName, email, phone, altPhone,
-        bankAccount, ifsc, micr, branchName, branchAddress,
-        qualification, expertise
-    } = req.body;
+// Signup Route
+app.post("/signup", async (req, res) => {
+    const { username, password, role, facultyId } = req.body;
 
-    if (!username || !password || !role || !facultyId || !fullName || !email || !phone) {
-        return res.status(400).json({ message: "All required fields must be filled." });
+    if (!username || !password || !role) {
+        return res.status(400).json({ message: "All fields are required." });
     }
 
     try {
         const existingUser = await User.findOne({ username });
         if (existingUser) {
-            return res.status(400).json({ message: "Username already taken!" });
+            return res.status(400).json({ message: "User already exists." });
         }
 
-        const user = new User({ username, password, role, facultyId });
-        const extraDetails = new ExtraDetails({
-            username, fullName, dob, facultyId, address, campus,
-            campusName, email, phone, altPhone, bankAccount, ifsc,
-            micr, branchName, branchAddress, qualification, expertise
-        });
-
-        await user.save();
-        await extraDetails.save();
+        const newUser = new User({ username, password, role, facultyId });
+        await newUser.save();
 
         res.status(201).json({ message: "Signup successful!" });
     } catch (error) {
         console.error("Signup error:", error);
-        res.status(500).json({ message: "Server error, try again later." });
+        res.status(500).json({ message: "Error signing up." });
     }
 });
 
-// ✨ Full Profile API
+// ✨ Save Extra Faculty Details (Missing Route Added)
+app.post('/signup-details', async (req, res) => {
+    const {
+        username, fullName, dob, facultyId, address, campus, campusName,
+        email, phone, altPhone, bankAccount, ifsc, micr,
+        branchName, branchAddress, qualification, expertise
+    } = req.body;
+
+    try {
+        const existing = await ExtraDetails.findOne({ username });
+        if (existing) {
+            return res.status(400).json({ message: "Details already submitted." });
+        }
+
+        const extraDetails = new ExtraDetails({
+            username, fullName, dob, facultyId, address, campus, campusName,
+            email, phone, altPhone, bankAccount, ifsc, micr,
+            branchName, branchAddress, qualification, expertise
+        });
+
+        await extraDetails.save();
+        res.status(201).json({ message: "Extra details saved successfully!" });
+    } catch (err) {
+        console.error("Signup-details error:", err);
+        res.status(500).json({ message: "Failed to save details." });
+    }
+});
+
+// Full Profile API
 app.get('/full-profile', async (req, res) => {
-    const { username } = req.query; // Expecting username in query
+    const { username } = req.query;
 
     const user = await User.findOne({ username });
     if (!user) {
@@ -249,13 +257,10 @@ app.get('/full-profile', async (req, res) => {
         return res.status(400).json({ message: 'Extra details not found' });
     }
 
-    res.status(200).json({
-        user,
-        extraDetails
-    });
+    res.status(200).json({ user, extraDetails });
 });
 
-// ✨ Admin Login
+// Admin Login
 app.post('/admin_login', (req, res) => {
     const { username, password } = req.body;
 
@@ -267,6 +272,7 @@ app.post('/admin_login', (req, res) => {
     }
 });
 
+// Faculty Login
 app.post('/faculty_login', async (req, res) => {
     const { username, password } = req.body;
 
@@ -285,7 +291,6 @@ app.post('/faculty_login', async (req, res) => {
             return res.status(400).json({ message: "Incorrect password." });
         }
 
-        // ✅ Set session user object
         req.session.user = {
             username: user.username,
             role: user.role,
@@ -298,7 +303,7 @@ app.post('/faculty_login', async (req, res) => {
     }
 });
 
-// 🖥️ Admin Dashboard
+// Admin Dashboard
 app.get('/dashboard.html', (req, res) => {
     if (req.session.user && req.session.user.role === 'admin') {
         res.sendFile(path.join(__dirname, 'public/admin_dashboard.html'));
@@ -307,7 +312,7 @@ app.get('/dashboard.html', (req, res) => {
     }
 });
 
-// 🎓 Faculty Dashboard
+// Faculty Dashboard
 app.get('/faculty_dashboard.html', (req, res) => {
     if (req.session.user && req.session.user.role === 'faculty') {
         res.sendFile(path.join(__dirname, 'public/faculty_dashboard.html'));
@@ -316,7 +321,7 @@ app.get('/faculty_dashboard.html', (req, res) => {
     }
 });
 
-// Start Server
+// Start the server
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });

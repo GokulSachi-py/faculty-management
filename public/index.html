@@ -217,6 +217,7 @@
           <input type="text" id="expertise" />
 
           <button class="login" onclick="submitExtraDetails()">Submit</button>
+
           <button
             class="signup"
             style="margin-top: 10px"
@@ -374,10 +375,10 @@
         }
       }
 
-      function submitExtraDetails() {
+      async function submitExtraDetails() {
         const fullName = document.getElementById("fullName").value.trim();
         const dob = document.getElementById("dob").value;
-        const facultyId = document.getElementById("facultyId").value.trim();
+        const facultyId = document.getElementById("facultyId").value.trim(); // This is not needed on the front end
         const address = document.getElementById("address").value.trim();
         const campus = document.getElementById("campus").value;
         const campusName = document.getElementById("campusName").value.trim();
@@ -386,7 +387,7 @@
         const altPhone = document.getElementById("altPhone").value.trim();
         const bankAccount = document.getElementById("bankAccount").value.trim();
         const ifsc = document.getElementById("ifsc").value.trim();
-        const mirc = document.getElementById("mirc").value.trim();
+        const micr = document.getElementById("mirc").value.trim();
         const branchName = document.getElementById("branchName").value.trim();
         const branchAddress = document
           .getElementById("branchAddress")
@@ -394,10 +395,10 @@
         const qualification = document.getElementById("qualification").value;
         const expertise = document.getElementById("expertise").value.trim();
 
+        // Validation for empty fields
         if (
           !fullName ||
           !dob ||
-          !facultyId ||
           !address ||
           !campus ||
           !campusName ||
@@ -405,20 +406,19 @@
           !phone ||
           !bankAccount ||
           !ifsc ||
-          !mirc ||
+          !micr ||
           !branchName ||
           !qualification ||
           !expertise
         ) {
-          alert("Please fill out all fields.");
+          alert("Please fill out all required fields.");
           return;
         }
 
-        // Collect all data into an object to send
+        // Collect the data to be sent to the server
         const data = {
           fullName,
           dob,
-          facultyId,
           address,
           campus,
           campusName,
@@ -427,27 +427,46 @@
           altPhone,
           bankAccount,
           ifsc,
-          mirc,
+          micr,
           branchName,
           branchAddress,
           qualification,
           expertise,
+          username: localStorage.getItem("username"), // Assuming username is stored in localStorage
         };
 
-        fetch("/signup-details", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        })
-          .then((response) => response.json())
-          .then((resData) => {
-            if (resData.success) {
-              alert("Details submitted successfully!");
-              window.location.href = "faculty_dashboard.html";
-            } else {
-              alert(resData.message);
-            }
+        try {
+          const response = await fetch("/signup-details", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
           });
+
+          const text = await response.text(); // Read the response as text first
+
+          if (!response.ok) {
+            console.error("Error response:", text); // Log the raw response if not OK
+            alert("Server error: " + text); // Display the error message
+            return;
+          }
+
+          let resData;
+          try {
+            resData = JSON.parse(text); // Try to parse the response as JSON
+          } catch (e) {
+            console.error("Invalid JSON response:", text); // Log invalid JSON
+            alert("Received invalid response from server.");
+            return;
+          }
+
+          alert(resData.message || "Submission failed. Please try again.");
+          if (response.ok) {
+            window.location.href = "faculty_dashboard.html"; // Redirect after successful submission
+          }
+        } catch (error) {
+          console.error("Error during submission:", error); // Log the error if request fails
+          alert("An error occurred while submitting details.");
+        }
       }
 
       function resetExtraDetailsForm() {
