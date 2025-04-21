@@ -281,14 +281,11 @@ app.post('/faculty_login', async (req, res) => {
     }
 
     try {
-        const user = await User.findOne({ username, role: 'Faculty' });
+        // Check for the user with matching username and password
+        const user = await User.findOne({ username, password, role: 'faculty' });
 
         if (!user) {
             return res.status(404).json({ message: "User not found." });
-        }
-
-        if (user.password !== password) {
-            return res.status(400).json({ message: "Incorrect password." });
         }
 
         req.session.user = {
@@ -302,6 +299,7 @@ app.post('/faculty_login', async (req, res) => {
         res.status(500).json({ message: "Server error." });
     }
 });
+
 
 // Admin Dashboard
 app.get('/dashboard.html', (req, res) => {
