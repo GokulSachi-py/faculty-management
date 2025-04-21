@@ -49,6 +49,45 @@
       bottom: 0;
       width: 100%;
     }
+    #assignment-query {
+      display: none;
+      background-color: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    #assignment-query h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+    #assignment-query button {
+      background-color: #5bc0de;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    #assignment-query button:hover {
+      background-color: #31b0d5;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #004080;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -73,6 +112,32 @@
       <li><a href="#">Faculty Handbook</a></li>
     </ul>
   </div>
+
+  <!-- Faculty Assignment Table -->
+  <div class="dashboard-card">
+    <h3>Your Faculty Assignments</h3>
+    <table id="assignments-table">
+      <thead>
+        <tr>
+          <th>Subject Name</th>
+          <th>Role</th>
+          <th>Number of Questions</th>
+          <th>Regulation</th>
+        </tr>
+      </thead>
+      <tbody id="assignments-list">
+        <!-- Dynamic rows will be added here -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Assignment Query Section -->
+  <div id="assignment-query" class="dashboard-card">
+    <h3>You are selected as the question paper setter, are you willing?</h3>
+    <button onclick="updateAssignmentResponse('yes')">Yes</button>
+    <button onclick="updateAssignmentResponse('no')">No</button>
+  </div>
+
 </main>
 
 <footer>
@@ -86,6 +151,86 @@
     alert("Logged out successfully!");
     window.location.href = "index.html"; // Back to login
   }
+
+  async function fetchFacultyName() {
+  try {
+    const response = await fetch('/get-faculty-name');  // Fetch faculty's name from backend
+    const data = await response.json();
+    const welcomeMessage = `Welcome, ${data.fullName || 'Faculty Member'}!`;  // Personalize the message
+    document.querySelector('.card-title').textContent = welcomeMessage;
+  } catch (error) {
+    console.error('Error fetching faculty name:', error);
+  }
+}
+
+// Call this function when the page loads to show personalized data
+window.onload = fetchFacultyName;
+
+  // Fetch the assignment status on page load
+  async function getAssignmentStatus() {
+    try {
+      const response = await fetch('/get-faculty-assignment-status');
+      const data = await response.json();
+
+      // If the faculty is assigned and also a question setter, show the prompt
+      if (data.isAssigned && data.isQuestionSetter) {
+        document.getElementById('assignment-query').style.display = 'block';
+      }
+    } catch (error) {
+      console.error('Error fetching assignment status:', error);
+    }
+  }
+
+  async function fetchFacultyAssignments() {
+  try {
+    const response = await fetch("/get-faculty-assignments");  // Fetch assignments based on facultyId
+    const assignments = await response.json();
+
+    const assignmentsList = document.getElementById("assignments-list");
+
+    assignments.forEach((assignment) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${assignment.subjectName}</td>
+        <td>${assignment.role}</td>
+        <td>${assignment.numberOfQuestions}</td>
+        <td>${assignment.regulation}</td>
+      `;
+      assignmentsList.appendChild(row);
+    });
+  } catch (error) {
+    console.error("Error fetching faculty assignments:", error);
+  }
+}
+
+// Call this function when the page loads to show the assignments
+window.onload = () => {
+  fetchFacultyAssignments();
+  fetchFacultyName();  // Fetch and display faculty name
+};
+
+
+  document.addEventListener("DOMContentLoaded", fetchFacultyAssignments);
+
+  // Handle the faculty's response to the assignment
+  async function updateAssignmentResponse(response) {
+    try {
+      const res = await fetch('/update-faculty-assignment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response })
+      });
+
+      const data = await res.json();
+      alert(data.message);
+      document.getElementById('assignment-query').style.display = 'none'; // Hide the query after response
+    } catch (error) {
+      console.error('Error updating assignment response:', error);
+    }
+  }
+
+  // Call getAssignmentStatus when the page loads
+  window.onload = getAssignmentStatus;
 </script>
 
 </body>
