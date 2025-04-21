@@ -226,7 +226,7 @@
       <div id="question-paper-assigner-content" class="feature-card" style="margin-left: 30px">
         <h3>Question Paper Assigner</h3>
         <p>Manage faculty assignments for question paper setting and scrutiny.</p>
-        <table class="question-paper-table">
+        <table border="1" class="question-paper-table">
           <thead>
             <tr>
               <th>Serial No</th>
@@ -237,6 +237,7 @@
               <th>Number of Questions</th>
               <th>Regulation</th>
               <th>Role</th>
+              <th>Response</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -408,6 +409,28 @@
     }
 
     document.addEventListener("DOMContentLoaded", fetchFacultyAssignments);
+
+    async function loadResponses() {
+    const res = await fetch('/question-assigner-responses');
+    const data = await res.json();
+    const tbody = document.querySelector('.question-paper-table tbody');
+    tbody.innerHTML = '';
+    data.forEach(row => {
+        tbody.innerHTML += `<tr>
+            <td>${row.facultyId}</td>
+            <td>${row.subject}</td>
+            <td>${row.response || 'Pending'}</td>
+            <td><button class="remove-button" onclick="removeFaculty('${row.facultyId}', this)">Remove</button></td>
+        </tr>`;
+    });
+
+
+
+    window.onload = function() {
+  checkPrompt();
+}
+
+}
   </script>
 </body>
 </html>

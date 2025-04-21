@@ -72,11 +72,22 @@ const facultyAssignmentSchema = new mongoose.Schema({
 });
 
 const questionAssignerSchema = new mongoose.Schema({
+    facultyId: String,
     subject: String,
+    subjectCode: String,
+    subjectName: String,
+    regulation: String,
+    facultyName: String,
     year: Number,
     assignedBy: String,
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    response: { type: String, default: "" },
+    role: {
+        type: String,  // Role field to store either "scrutiny" or "question assigner"
+        required: true
+    }
 });
+
 
 // Models
 const User = mongoose.model('User', userSchema);
@@ -84,37 +95,54 @@ const ExtraDetails = mongoose.model('ExtraDetails', extraDetailsSchema);
 const FacultyAssignment = mongoose.model('FacultyAssignment', facultyAssignmentSchema);
 const QuestionAssigner = mongoose.model('QuestionAssigner', questionAssignerSchema);
 
-// Faculty Assignment Saving
 app.post('/save-faculty-assignment', async (req, res) => {
-    const { facultyId, facultyName, subjectCode, subjectName, numberOfQuestions, regulation, role } = req.body;
+    const { facultyId, subjectCode, subjectName, numberOfQuestions, regulation, role } = req.body;
 
-    const existingAssignment = await FacultyAssignment.findOne({
-        facultyId,
-        subjectCode,
-        role
-    });
-
+    const existingAssignment = await FacultyAssignment.findOne({ facultyId, subjectCode, role });
     if (existingAssignment) {
         return res.status(400).json({ message: 'Faculty assignment already exists' });
     }
 
-    const newFacultyAssignment = new FacultyAssignment({
-        facultyId,
-        facultyName,
-        subjectCode,
-        subjectName,
-        numberOfQuestions: Number(numberOfQuestions),
-        regulation,
-        role
-    });
+    // Fetch the faculty name and subject from ExtraDetails
+    const extraDetails = await ExtraDetails.findOne({ facultyId });
+    const facultyName = extraDetails ? extraDetails.fullName : 'Unknown Faculty';
 
     try {
+        // Create and save the new faculty assignment
+        const newFacultyAssignment = new FacultyAssignment({
+            facultyId,
+            facultyName,
+            subjectCode,
+            subjectName,
+            numberOfQuestions: Number(numberOfQuestions),
+            regulation,
+            role
+        });
+
         await newFacultyAssignment.save();
 
+        // Update ExtraDetails with assigned subject
         await ExtraDetails.updateOne(
             { facultyId },
             { $set: { assignedSubject: subjectName, isAssigned: true } }
         );
+
+        // ✨ Automatically add to QuestionAssigner collection with role
+        const alreadyInQA = await QuestionAssigner.findOne({ facultyId, subject: subjectName });
+        if (!alreadyInQA) {
+            const qa = new QuestionAssigner({
+                facultyId,
+                subject: subjectName,
+                subjectCode,    // Save the subject code
+                subjectName,    // Save the subject name
+                regulation,     // Save the regulation
+                facultyName,    // Save the faculty name
+                year: new Date().getFullYear(),
+                assignedBy: req.session.user?.username || "ADMIN",
+                role: role       // Save the role
+            });
+            await qa.save();
+        }
 
         res.status(201).json({ message: 'Faculty Assignment saved successfully' });
     } catch (err) {
@@ -122,6 +150,8 @@ app.post('/save-faculty-assignment', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+
 
 app.get('/api/faculty-assignments', async (req, res) => {
     try {
@@ -144,7 +174,7 @@ app.get('/get-faculty-assignment-status', async (req, res) => {
     if (!extraDetails) {
         return res.status(404).json({ message: 'Faculty not found' });
     }
-
+    
     res.status(200).json({
         isAssigned: extraDetails.isAssigned || false,
         assignedSubject: extraDetails.assignedSubject || ''
@@ -178,15 +208,32 @@ app.post('/remove-faculty-assignment', async (req, res) => {
     }
 
     try {
-        const deletedAssignment = await FacultyAssignment.findOneAndDelete({ facultyId });
+        // Remove the assignments from FacultyAssignment collection
+        const assignmentResult = await FacultyAssignment.deleteMany({ facultyId });
+        console.log(`Deleted ${assignmentResult.deletedCount} assignments from FacultyAssignment`);
 
-        if (!deletedAssignment) {
-            return res.status(404).json({ message: 'Faculty assignment not found' });
+        if (assignmentResult.deletedCount === 0) {
+            return res.status(404).json({ message: 'No assignments found for the faculty' });
         }
+
+        // Remove the associated records from ExtraDetails
+        const extraDetailsUpdateResult = await ExtraDetails.updateOne(
+            { facultyId },
+            { $set: { assignedSubject: '', isAssigned: false } }
+        );
+        console.log(`Updated ExtraDetails: ${extraDetailsUpdateResult.nModified} record(s)`);
+
+        if (extraDetailsUpdateResult.nModified === 0) {
+            return res.status(404).json({ message: 'Faculty details not found or already updated' });
+        }
+
+        // Optionally, remove from QuestionAssigner if needed
+        const questionAssignerResult = await QuestionAssigner.deleteMany({ facultyId });
+        console.log(`Deleted ${questionAssignerResult.deletedCount} records from QuestionAssigner`);
 
         res.status(200).json({ message: 'Faculty assignment removed successfully' });
     } catch (err) {
-        console.error('Error deleting assignment:', err);
+        console.error('Error deleting faculty assignment:', err);
         res.status(500).json({ message: 'Server error while deleting' });
     }
 });
@@ -318,6 +365,65 @@ app.get('/faculty_dashboard.html', (req, res) => {
         res.redirect('/');
     }
 });
+
+app.post('/add-question-assigner', async (req, res) => {
+    const { facultyId, subject, subjectCode, subjectName, regulation, facultyName, year, assignedBy } = req.body;
+    try {
+        const newEntry = new QuestionAssigner({
+            facultyId,
+            subject,
+            subjectCode,    // Save the subject code
+            subjectName,    // Save the subject name
+            regulation,     // Save the regulation
+            facultyName,    // Save the faculty name
+            year,
+            assignedBy
+        });
+        await newEntry.save();
+        res.status(201).json({ message: 'Faculty added to question assigner list' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error adding entry', error: err });
+    }
+});
+
+app.get('/get-question-assigner-status', async (req, res) => {
+    const { facultyId } = req.session.user;
+    try {
+        const assign = await QuestionAssigner.findOne({ facultyId, response: '' });
+        if (assign) {
+            return res.status(200).json({ prompt: true, data: assign });
+        }
+        res.status(200).json({ prompt: false });
+    } catch (err) {
+        res.status(500).json({ message: 'Error checking status' });
+    }
+});
+app.post('/respond-question-assigner', async (req, res) => {
+    const { facultyId } = req.session.user;
+    const { response } = req.body;
+    try {
+        const updated = await QuestionAssigner.findOneAndUpdate(
+            { facultyId, response: '' },
+            { $set: { response } }
+        );
+        if (updated) {
+            res.status(200).json({ message: "Response recorded." });
+        } else {
+            res.status(404).json({ message: "No pending prompt found." });
+        }
+    } catch (err) {
+        res.status(500).json({ message: "Error updating response." });
+    }
+});
+app.get('/question-assigner-responses', async (req, res) => {
+    try {
+        const responses = await QuestionAssigner.find({});
+        res.status(200).json(responses);
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching responses." });
+    }
+});
+
 
 // Start the server
 app.listen(PORT, () => {

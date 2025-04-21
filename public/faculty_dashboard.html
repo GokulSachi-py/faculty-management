@@ -103,6 +103,12 @@
     <p>This is your dashboard where you can manage your profile, view schedules, and handle academic responsibilities.</p>
   </div>
 
+  <div id="assignerPrompt" style="display:none;">
+    <p>You are selected as the question paper assigner. Are you willing?</p>
+    <button onclick="submitResponse('yes')">Yes</button>
+    <button onclick="submitResponse('no')">No</button>
+  </div>
+  
   <!-- Faculty Assignment Table -->
   <div class="dashboard-card">
     <h3>Your Faculty Assignments</h3>
@@ -135,6 +141,8 @@
 </footer>
 
 <script>
+
+  
   function logout() {
     // Optional: clear session/localStorage
     localStorage.clear();
@@ -221,6 +229,28 @@ window.onload = () => {
 
   // Call getAssignmentStatus when the page loads
   window.onload = getAssignmentStatus;
+
+  async function checkPrompt() {
+    const res = await fetch('/get-question-assigner-status');
+    const data = await res.json();
+    if (data.prompt) {
+        document.getElementById('assignerPrompt').style.display = 'block';
+    }
+}
+async function submitResponse(response) {
+    await fetch('/respond-question-assigner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response })
+    });
+    document.getElementById('assignerPrompt').innerHTML = '<p>Thanks for your response.</p>';
+}
+checkPrompt();
+
+window.onload = function() {
+  checkPrompt();
+}
+
 </script>
 
 </body>
