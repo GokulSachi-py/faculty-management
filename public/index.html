@@ -71,8 +71,7 @@
             <div class="button-group">
                 <a href="#" class="forgot">Forgot Password?</a>
                 <div class="action-buttons">
-                    <button class="signup" onclick="handleSignup()" type="button">Sign Up</button>
-
+                    <button class="signup" onclick="handleSignup()">Sign Up</button>
                     <button class="login" onclick="validateFacultyLogin()">Login</button>
                 </div>
             </div>
@@ -341,11 +340,11 @@ async function handleSignup() {
         const branchAddress = document.getElementById("branchAddress").value.trim();
         const qualification = document.getElementById("qualification").value;
         const expertise = document.getElementById("expertise").value.trim();
-        
-        if ([fullName, dob, facultyId, address, campus, campusName, email, phone, bankAccount, ifsc, mirc, branchName, qualification, expertise].some(field => !field)) {
-    alert("Please fill out all required fields.");
-    return;
-}
+
+        if (!fullName || !dob || !facultyId || !address || !campus || !campusName || !email || !phone || !bankAccount || !ifsc || !mirc || !branchName || !qualification || !expertise) {
+            alert("Please fill out all fields.");
+            return;
+        }
 
         // Collect all data into an object to send
         const data = {
