@@ -356,7 +356,7 @@
           const response = await fetch("/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password, role: "Faculty" }), // Ensure correct role is passed
+            body: JSON.stringify({ username, password, role: "faculty" }), // Ensure correct role is passed
           });
 
           const data = await response.json();
@@ -419,6 +419,7 @@
         const data = {
           fullName,
           dob,
+          facultyId,
           address,
           campus,
           campusName,

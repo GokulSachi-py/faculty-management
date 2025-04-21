@@ -191,12 +191,11 @@ app.post('/remove-faculty-assignment', async (req, res) => {
     }
 });
 
-// Signup Route
 app.post("/signup", async (req, res) => {
-    const { username, password, role, facultyId } = req.body;
+    const { username, password, role = 'faculty', facultyId } = req.body;
 
-    if (!username || !password || !role) {
-        return res.status(400).json({ message: "All fields are required." });
+    if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required." });
     }
 
     try {
@@ -205,7 +204,7 @@ app.post("/signup", async (req, res) => {
             return res.status(400).json({ message: "User already exists." });
         }
 
-        const newUser = new User({ username, password, role, facultyId });
+        const newUser = new User({ username, password, role: role.toLowerCase(), facultyId });
         await newUser.save();
 
         res.status(201).json({ message: "Signup successful!" });
@@ -214,6 +213,7 @@ app.post("/signup", async (req, res) => {
         res.status(500).json({ message: "Error signing up." });
     }
 });
+
 
 // ✨ Save Extra Faculty Details (Missing Route Added)
 app.post('/signup-details', async (req, res) => {
