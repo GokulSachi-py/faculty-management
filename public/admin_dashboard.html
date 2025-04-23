@@ -1,288 +1,322 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Dashboard - College of Engineering Guindy</title>
-  <style>
-    /* Your Existing CSS (no change needed) */
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f8f9fa;
-      display: flex;
-      height: 100vh;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - College of Engineering Guindy</title>
+    <style>
+      /* Your Existing CSS (no change needed) */
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f8f9fa;
+        display: flex;
+        height: 100vh;
+      }
 
-    .sidebar {
-      width: 250px;
-      height: 100vh;
-      background-color: #0f83ff;
-      color: white;
-      position: fixed;
-      top: 0;
-      left: 0;
-      padding: 20px;
-      overflow-y: auto;
-      transition: all 0.3s ease;
-    }
+      .sidebar {
+        width: 250px;
+        height: 100vh;
+        background-color: #0f83ff;
+        color: white;
+        position: fixed;
+        top: 0;
+        left: 0;
+        padding: 20px;
+        overflow-y: auto;
+        transition: all 0.3s ease;
+      }
 
-    .sidebar.collapsed {
-      width: 50px;
-      padding: 20px;
-      color: transparent;
-      overflow: hidden;
-    }
+      .sidebar.collapsed {
+        width: 50px;
+        padding: 20px;
+        color: transparent;
+        overflow: hidden;
+      }
 
-    .sidebar.collapsed ul,
-    .sidebar.collapsed h2 {
-      display: none;
-    }
+      .sidebar.collapsed ul,
+      .sidebar.collapsed h2 {
+        display: none;
+      }
 
-    .sidebar h2 {
-      text-align: center;
-      margin-bottom: 30px;
-    }
+      .sidebar h2 {
+        text-align: center;
+        margin-bottom: 30px;
+      }
 
-    .sidebar ul {
-      list-style: none;
-      padding: 0;
-    }
+      .sidebar ul {
+        list-style: none;
+        padding: 0;
+      }
 
-    .sidebar ul li {
-      margin: 20px 0;
-    }
+      .sidebar ul li {
+        margin: 20px 0;
+      }
 
-    .sidebar ul li a {
-      color: white;
-      text-decoration: none;
-      font-size: 18px;
-      display: block;
-    }
+      .sidebar ul li a {
+        color: white;
+        text-decoration: none;
+        font-size: 18px;
+        display: block;
+      }
 
-    .sidebar ul li a.active {
-      font-weight: bold;
-    }
+      .sidebar ul li a.active {
+        font-weight: bold;
+      }
 
-    .content-wrapper {
-      margin-left: 250px;
-      padding: 20px;
-      transition: margin-left 0.3s ease;
-      width: 100%;
-      max-width: 1200px;
-      margin-right: 20px;
-      margin-top: 20px;
-      margin-bottom: 20px;
-    }
+      .content-wrapper {
+        margin-left: 250px;
+        padding: 20px;
+        transition: margin-left 0.3s ease;
+        width: 100%;
+        max-width: 1200px;
+        margin-right: 20px;
+        margin-top: 20px;
+        margin-bottom: 20px;
+      }
 
-    .content-wrapper.collapsed {
-      margin-left: 50px;
-      display: flex;
-      justify-content: center;
-      width: 100%;
-    }
+      .content-wrapper.collapsed {
+        margin-left: 50px;
+        display: flex;
+        justify-content: center;
+        width: 100%;
+      }
 
-    .content {
-      width: 100%;
-      max-width: 1200px;
-      text-align: center;
-    }
+      .content {
+        width: 100%;
+        max-width: 1200px;
+        text-align: center;
+      }
 
-    .content h1 {
-      font-size: 32px;
-      margin-bottom: 20px;
-    }
+      .content h1 {
+        font-size: 32px;
+        margin-bottom: 20px;
+      }
 
-    .feature-card,
-    .admin-info-card {
-      background-color: white;
-      padding: 20px;
-      margin-bottom: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
+      .feature-card,
+      .admin-info-card {
+        background-color: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
 
-    .hidden-section {
-      display: none;
-    }
+      .hidden-section {
+        display: none;
+      }
 
-    .toggle-sidebar-btn {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 24px;
-      cursor: pointer;
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      z-index: 1000;
-      background-color: #0f83ff;
-      padding: 10px;
-      border-radius: 50%;
-    }
+      .toggle-sidebar-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+        background-color: #0f83ff;
+        padding: 10px;
+        border-radius: 50%;
+      }
 
-    .question-paper-table {
-      width: 100%;
-      border-collapse: collapse;
-    }
+      .question-paper-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
 
-    .question-paper-table th,
-    .question-paper-table td {
-      border: 1px solid #ddd;
-      padding: 10px;
-      text-align: center;
-    }
+      .question-paper-table th,
+      .question-paper-table td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+      }
 
-    .question-paper-table th {
-      background-color: #0f83ff;
-      color: white;
-    }
+      .question-paper-table th {
+        background-color: #0f83ff;
+        color: white;
+      }
 
-    #add-faculty-button {
-      margin-top: 15px;
-      background-color: #0f83ff;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+      #add-faculty-button {
+        margin-top: 15px;
+        background-color: #0f83ff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
 
-    .input-field {
-      width: 90%;
-      padding: 5px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
+      .input-field {
+        width: 90%;
+        padding: 5px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
 
-    .save-button,
-    .cancel-button {
-      margin: 5px;
-      padding: 8px 12px;
-      background-color: #0f83ff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+      .save-button,
+      .cancel-button {
+        margin: 5px;
+        padding: 8px 12px;
+        background-color: #0f83ff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
 
-    .save-button:disabled,
-    .cancel-button:disabled {
-      background-color: #aaa;
-      cursor: not-allowed;
-    }
+      .save-button:disabled,
+      .cancel-button:disabled {
+        background-color: #aaa;
+        cursor: not-allowed;
+      }
 
-    .logout-link {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background-color: red;
-      color: white;
-      padding: 10px 15px;
-      border-radius: 5px;
-      cursor: pointer;
-      text-align: center;
-      text-decoration: none;
-      font-weight: bold;
-    }
+      .logout-link {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: red;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        font-weight: bold;
+      }
 
-    .logout-link:hover {
-      background-color: darkred;
-    }
+      .logout-link:hover {
+        background-color: darkred;
+      }
 
-    .remove-button {
-      background-color: red;
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+      .remove-button {
+        background-color: red;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
 
-    .remove-button:hover {
-      background-color: darkred;
-    }
-  </style>
-</head>
+      .remove-button:hover {
+        background-color: darkred;
+      }
+    </style>
+  </head>
 
-<body>
-  <div class="sidebar">
-    <h2>Admin Panel</h2>
-    <ul>
-      <li><a href="#question-paper-assigner-content" onclick="showSection('question-paper-assigner-content', this)">Question Paper Assigner</a></li>
-      <li><a href="#admin-info-content" onclick="showSection('admin-info-content', this)">Admin Info</a></li>
-    </ul>
-  </div>
+  <body>
+    <div class="sidebar">
+      <h2>Admin Panel</h2>
+      <ul>
+        <li>
+          <a
+            href="#question-paper-assigner-content"
+            onclick="showSection('question-paper-assigner-content', this)"
+            >Question Paper Assigner</a
+          >
+        </li>
+        <li>
+          <a
+            href="#admin-info-content"
+            onclick="showSection('admin-info-content', this)"
+            >Admin Info</a
+          >
+        </li>
+      </ul>
+    </div>
 
-  <a href="/logout" onclick="return confirmLogout()" class="logout-link">Logout</a>
+    <a href="/logout" onclick="return confirmLogout()" class="logout-link"
+      >Logout</a
+    >
 
-  <button class="toggle-sidebar-btn" onclick="toggleSidebar()">☰</button>
+    <button class="toggle-sidebar-btn" onclick="toggleSidebar()">☰</button>
 
-  <div class="content-wrapper">
-    <div class="content">
-      <h1>Admin Dashboard</h1>
+    <div class="content-wrapper">
+      <div class="content">
+        <h1>Admin Dashboard</h1>
 
-      <div id="question-paper-assigner-content" class="feature-card" style="margin-left: 30px">
-        <h3>Question Paper Assigner</h3>
-        <p>Manage faculty assignments for question paper setting and scrutiny.</p>
-        <table border="1" class="question-paper-table">
-          <thead>
-            <tr>
-              <th>Serial No</th>
-              <th>Faculty ID</th>
-              <th>Faculty Name</th>
-              <th>Subject Code</th>
-              <th>Subject Name</th>
-              <th>Number of Questions</th>
-              <th>Regulation</th>
-              <th>Role</th>
-              <th>Response</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="faculty-table-body"></tbody>
-        </table>
-        <button id="add-faculty-button" onclick="addRow()">Add New Faculty</button>
-      </div>
+        <div
+          id="question-paper-assigner-content"
+          class="feature-card"
+          style="margin-left: 30px"
+        >
+          <h3>Question Paper Assigner</h3>
+          <p>
+            Manage faculty assignments for question paper setting and scrutiny.
+          </p>
+          <table class="question-paper-table">
+            <thead>
+              <tr>
+                <th>Serial No</th>
+                <th>Faculty ID</th>
+                <th>Faculty Name</th>
+                <th>Subject Code</th>
+                <th>Subject Name</th>
+                <th>Number of Questions</th>
+                <th>Regulation</th>
+                <th>Role</th>
+                <th>Response</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="faculty-table-body"></tbody>
+          </table>
+          <button id="add-faculty-button" onclick="addRow()">
+            Add New Faculty
+          </button>
+        </div>
 
-      <div id="admin-info-content" class="admin-info-card hidden-section" style="margin-left: 30px">
-        <h3>Admin Info</h3>
-        <p>Admin-related information goes here.</p>
+        <div
+          id="admin-info-content"
+          class="admin-info-card hidden-section"
+          style="margin-left: 30px"
+        >
+          <h3>Admin Info</h3>
+          <p>Admin-related information goes here.</p>
+        </div>
       </div>
     </div>
-  </div>
 
-  <script>
-    const facultyTableBody = document.getElementById("faculty-table-body");
+    <script>
+      const facultyTableBody = document.getElementById("faculty-table-body");
 
-    function toggleSidebar() {
-      document.querySelector(".sidebar").classList.toggle("collapsed");
-      document.querySelector(".content-wrapper").classList.toggle("collapsed");
-    }
+      function toggleSidebar() {
+        document.querySelector(".sidebar").classList.toggle("collapsed");
+        document
+          .querySelector(".content-wrapper")
+          .classList.toggle("collapsed");
+      }
 
-    function confirmLogout() {
-      return confirm("Do you want to logout?");
-    }
+      function confirmLogout() {
+        return confirm("Do you want to logout?");
+      }
 
-    function showSection(sectionId, clickedLink) {
-      document.querySelectorAll(".feature-card, .admin-info-card").forEach(section => {
-        section.classList.add("hidden-section");
-      });
-      document.getElementById(sectionId).classList.remove("hidden-section");
-      document.querySelectorAll(".sidebar a").forEach(link => link.classList.remove("active"));
-      clickedLink.classList.add("active");
-    }
+      function showSection(sectionId, clickedLink) {
+        document
+          .querySelectorAll(".feature-card, .admin-info-card")
+          .forEach((section) => {
+            section.classList.add("hidden-section");
+          });
+        document.getElementById(sectionId).classList.remove("hidden-section");
+        document
+          .querySelectorAll(".sidebar a")
+          .forEach((link) => link.classList.remove("active"));
+        clickedLink.classList.add("active");
+      }
 
-    function enableSaveButton(row) {
-      const inputs = row.querySelectorAll("input, select");
-      const allFilled = Array.from(inputs).every(input => input.value.trim() !== "");
-      row.querySelector(".save-button").disabled = !allFilled;
-    }
+      function enableSaveButton(row) {
+        const inputs = row.querySelectorAll("input, select");
+        const allFilled = Array.from(inputs).every(
+          (input) => input.value.trim() !== ""
+        );
+        row.querySelector(".save-button").disabled = !allFilled;
+      }
 
-    function addRow() {
-      const newRow = facultyTableBody.insertRow();
-      newRow.innerHTML = `
+      function addRow() {
+        const newRow = facultyTableBody.insertRow();
+        newRow.innerHTML = `
         <td></td>
         <td><input class="input-field" type="text" placeholder="Faculty ID" oninput="enableSaveButton(this.closest('tr'))"></td>
         <td><input class="input-field" type="text" placeholder="Faculty Name" oninput="enableSaveButton(this.closest('tr'))"></td>
@@ -303,37 +337,56 @@
             <option value="Scrutinizer">Scrutinizer</option>
           </select>
         </td>
+        <td></td>
         <td>
           <button class="save-button" onclick="saveFacultyRow(this.closest('tr'))" disabled>Save</button>
           <button class="cancel-button" onclick="this.closest('tr').remove(); updateRowNumbers();">Cancel</button>
         </td>
       `;
-      updateRowNumbers();
-    }
+        updateRowNumbers();
+      }
 
-    async function saveFacultyRow(row) {
-      const facultyId = row.querySelector('input[placeholder="Faculty ID"]').value.trim();
-      const facultyName = row.querySelector('input[placeholder="Faculty Name"]').value.trim();
-      const subjectCode = row.querySelector('input[placeholder="Subject Code"]').value.trim();
-      const subjectName = row.querySelector('input[placeholder="Subject Name"]').value.trim();
-      const numberOfQuestions = row.querySelector('input[placeholder="No. of Questions"]').value.trim();
-      const regulation = row.querySelectorAll("select")[0].value.trim();
-      const role = row.querySelectorAll("select")[1].value.trim();
+      async function saveFacultyRow(row) {
+        const facultyId = row
+          .querySelector('input[placeholder="Faculty ID"]')
+          .value.trim();
+        const facultyName = row
+          .querySelector('input[placeholder="Faculty Name"]')
+          .value.trim();
+        const subjectCode = row
+          .querySelector('input[placeholder="Subject Code"]')
+          .value.trim();
+        const subjectName = row
+          .querySelector('input[placeholder="Subject Name"]')
+          .value.trim();
+        const numberOfQuestions = row
+          .querySelector('input[placeholder="No. of Questions"]')
+          .value.trim();
+        const regulation = row.querySelectorAll("select")[0].value.trim();
+        const role = row.querySelectorAll("select")[1].value.trim();
 
-      const data = { facultyId, facultyName, subjectCode, subjectName, numberOfQuestions, regulation, role };
+        const data = {
+          facultyId,
+          facultyName,
+          subjectCode,
+          subjectName,
+          numberOfQuestions,
+          regulation,
+          role,
+        };
 
-      try {
-        const response = await fetch("/save-faculty-assignment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
+        try {
+          const response = await fetch("/save-faculty-assignment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
 
-        const result = await response.json();
-        alert(result.message || "Faculty assignment saved");
+          const result = await response.json();
+          alert(result.message || "Faculty assignment saved");
 
-        if (response.ok) {
-          row.innerHTML = `
+          if (response.ok) {
+            row.innerHTML = `
             <td></td>
             <td>${facultyId}</td>
             <td>${facultyName}</td>
@@ -342,55 +395,57 @@
             <td>${numberOfQuestions}</td>
             <td>${regulation}</td>
             <td>${role}</td>
+            <td>Pending</td>
+
             <td><button class="remove-button" onclick="removeFaculty('${facultyId}', this)">Remove</button></td>
           `;
-          updateRowNumbers();
+            updateRowNumbers();
+          }
+        } catch (error) {
+          console.error("Error saving:", error);
+          alert("Failed to save");
         }
-      } catch (error) {
-        console.error("Error saving:", error);
-        alert("Failed to save");
       }
-    }
 
-    async function removeFaculty(facultyId, button) {
-      if (!confirm("Are you sure?")) return;
+      async function removeFaculty(facultyId, button) {
+        if (!confirm("Are you sure?")) return;
 
-      try {
-        const response = await fetch("/remove-faculty-assignment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ facultyId })
+        try {
+          const response = await fetch("/remove-faculty-assignment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ facultyId }),
+          });
+
+          const result = await response.json();
+          alert(result.message || "Removed");
+
+          if (response.ok) {
+            button.closest("tr").remove();
+            updateRowNumbers();
+          }
+        } catch (error) {
+          console.error("Remove error:", error);
+          alert("Failed to remove");
+        }
+      }
+
+      function updateRowNumbers() {
+        const rows = facultyTableBody.querySelectorAll("tr");
+        rows.forEach((row, index) => {
+          const numberCell = row.querySelector("td:first-child");
+          if (numberCell) numberCell.textContent = index + 1;
         });
-
-        const result = await response.json();
-        alert(result.message || "Removed");
-
-        if (response.ok) {
-          button.closest("tr").remove();
-          updateRowNumbers();
-        }
-      } catch (error) {
-        console.error("Remove error:", error);
-        alert("Failed to remove");
       }
-    }
 
-    function updateRowNumbers() {
-      const rows = facultyTableBody.querySelectorAll("tr");
-      rows.forEach((row, index) => {
-        const numberCell = row.querySelector("td:first-child");
-        if (numberCell) numberCell.textContent = index + 1;
-      });
-    }
+      async function fetchFacultyAssignments() {
+        try {
+          const response = await fetch("/api/faculty-assignments");
+          const data = await response.json();
 
-    async function fetchFacultyAssignments() {
-      try {
-        const response = await fetch("/api/faculty-assignments");
-        const data = await response.json();
-
-        data.forEach(assignment => {
-          const newRow = facultyTableBody.insertRow();
-          newRow.innerHTML = `
+          data.forEach((assignment) => {
+            const newRow = facultyTableBody.insertRow();
+            newRow.innerHTML = `
             <td></td>
             <td>${assignment.facultyId}</td>
             <td>${assignment.facultyName}</td>
@@ -399,38 +454,38 @@
             <td>${assignment.numberOfQuestions}</td>
             <td>${assignment.regulation}</td>
             <td>${assignment.role}</td>
+            <td>${assignment.isAssigned}</td>
             <td><button class="remove-button" onclick="removeFaculty('${assignment.facultyId}', this)">Remove</button></td>
           `;
-        });
-        updateRowNumbers();
-      } catch (error) {
-        console.error("Failed to load assignments:", error);
+          });
+          updateRowNumbers();
+        } catch (error) {
+          console.error("Failed to load assignments:", error);
+        }
       }
-    }
 
-    document.addEventListener("DOMContentLoaded", fetchFacultyAssignments);
+      document.addEventListener("DOMContentLoaded", fetchFacultyAssignments);
 
-    async function loadResponses() {
-    const res = await fetch('/question-assigner-responses');
-    const data = await res.json();
-    const tbody = document.querySelector('.question-paper-table tbody');
-    tbody.innerHTML = '';
-    data.forEach(row => {
-        tbody.innerHTML += `<tr>
+      async function loadResponses() {
+        const res = await fetch("/question-assigner-responses");
+        const data = await res.json();
+        const tbody = document.querySelector(".question-paper-table tbody");
+        tbody.innerHTML = "";
+        data.forEach((row) => {
+          tbody.innerHTML += `<tr>
             <td>${row.facultyId}</td>
             <td>${row.subject}</td>
-            <td>${row.response || 'Pending'}</td>
-            <td><button class="remove-button" onclick="removeFaculty('${row.facultyId}', this)">Remove</button></td>
+            <td>${row.response || "Pending"}</td>
+            <td><button class="remove-button" onclick="removeFaculty('${
+              row.facultyId
+            }', this)">Remove</button></td>
         </tr>`;
-    });
+        });
 
-
-
-    window.onload = function() {
-  checkPrompt();
-}
-
-}
-  </script>
-</body>
+        window.onload = function () {
+          checkPrompt();
+        };
+      }
+    </script>
+  </body>
 </html>

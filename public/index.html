@@ -152,6 +152,10 @@
           <label>Full Name</label>
           <input type="text" id="fullName" />
 
+          <!-- <label>username</label>
+          <input type="text" id="username" /> -->
+
+
           <label>Date of Birth</label>
           <input type="date" id="dob" />
 
@@ -376,6 +380,7 @@
       }
 
       async function submitExtraDetails() {
+        // const username = document.getElementById("username").value.trim()
         const fullName = document.getElementById("fullName").value.trim();
         const dob = document.getElementById("dob").value;
         const facultyId = document.getElementById("facultyId").value.trim(); // This is not needed on the front end
@@ -397,6 +402,7 @@
 
         // Validation for empty fields
         if (
+          // !username ||
           !fullName ||
           !dob ||
           !address ||
@@ -417,6 +423,7 @@
 
         // Collect the data to be sent to the server
         const data = {
+          // username,
           fullName,
           dob,
           facultyId,

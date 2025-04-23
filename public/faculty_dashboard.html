@@ -1,257 +1,263 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Faculty Dashboard - CEG</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background-color: #f4f4f4;
-    }
-    header {
-      background-color: #004080;
-      color: white;
-      padding: 20px;
-      text-align: center;
-    }
-    main {
-      padding: 20px;
-    }
-    .dashboard-card {
-      background-color: white;
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .logout-btn {
-      background-color: #d9534f;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      float: right;
-      cursor: pointer;
-    }
-    .logout-btn:hover {
-      background-color: #c9302c;
-    }
-    .card-title {
-      margin-top: 0;
-    }
-    footer {
-      background-color: #eee;
-      text-align: center;
-      padding: 10px;
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-    }
-    #assignment-query {
-      display: none;
-      background-color: #f9f9f9;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    #assignment-query h3 {
-      margin: 0;
-      font-size: 18px;
-    }
-    #assignment-query button {
-      background-color: #5bc0de;
-      color: white;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 5px;
-      margin: 5px;
-      cursor: pointer;
-    }
-    #assignment-query button:hover {
-      background-color: #31b0d5;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    table, th, td {
-      border: 1px solid #ddd;
-    }
-    th, td {
-      padding: 10px;
-      text-align: left;
-    }
-    th {
-      background-color: #004080;
-      color: white;
-    }
-  </style>
-</head>
-<body>
-
-<header>
-  <h1>Faculty Dashboard - College of Engineering Guindy</h1>
-  <button class="logout-btn" onclick="logout()">Logout</button>
-</header>
-
-<main>
-  <div class="dashboard-card">
-    <h2 class="card-title">Welcome, Faculty Member!</h2>
-    <p>This is your dashboard where you can manage your profile, view schedules, and handle academic responsibilities.</p>
-  </div>
-
-  <div id="assignerPrompt" style="display:none;">
-    <p>You are selected as the question paper assigner. Are you willing?</p>
-    <button onclick="submitResponse('yes')">Yes</button>
-    <button onclick="submitResponse('no')">No</button>
-  </div>
-  
-  <!-- Faculty Assignment Table -->
-  <div class="dashboard-card">
-    <h3>Your Faculty Assignments</h3>
-    <table id="assignments-table">
-      <thead>
-        <tr>
-          <th>Subject Name</th>
-          <th>Role</th>
-          <th>Number of Questions</th>
-          <th>Regulation</th>
-        </tr>
-      </thead>
-      <tbody id="assignments-list">
-        <!-- Dynamic rows will be added here -->
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Assignment Query Section -->
-  <div id="assignment-query" class="dashboard-card">
-    <h3>You are selected as the question paper setter, are you willing?</h3>
-    <button onclick="updateAssignmentResponse('yes')">Yes</button>
-    <button onclick="updateAssignmentResponse('no')">No</button>
-  </div>
-
-</main>
-
-<footer>
-  &copy; 2025 Anna University - CEG. All rights reserved.
-</footer>
-
-<script>
-
-  
-  function logout() {
-    // Optional: clear session/localStorage
-    localStorage.clear();
-    alert("Logged out successfully!");
-    window.location.href = "index.html"; // Back to login
-  }
-
-  async function fetchFacultyName() {
-  try {
-    const response = await fetch('/get-faculty-name');  // Fetch faculty's name from backend
-    const data = await response.json();
-    const welcomeMessage = `Welcome, ${data.fullName || 'Faculty Member'}!`;  // Personalize the message
-    document.querySelector('.card-title').textContent = welcomeMessage;
-  } catch (error) {
-    console.error('Error fetching faculty name:', error);
-  }
-}
-
-// Call this function when the page loads to show personalized data
-window.onload = fetchFacultyName;
-
-  // Fetch the assignment status on page load
-  async function getAssignmentStatus() {
-    try {
-      const response = await fetch('/get-faculty-assignment-status');
-      const data = await response.json();
-
-      // If the faculty is assigned and also a question setter, show the prompt
-      if (data.isAssigned && data.isQuestionSetter) {
-        document.getElementById('assignment-query').style.display = 'block';
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Faculty Dashboard - CEG</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background-color: #f4f4f4;
       }
-    } catch (error) {
-      console.error('Error fetching assignment status:', error);
-    }
-  }
+      header {
+        background-color: #004080;
+        color: white;
+        padding: 20px;
+        text-align: center;
+      }
+      main {
+        padding: 20px;
+      }
+      .dashboard-card {
+        background-color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .logout-btn {
+        background-color: #d9534f;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        float: right;
+        cursor: pointer;
+      }
+      .logout-btn:hover {
+        background-color: #c9302c;
+      }
+      .card-title {
+        margin-top: 0;
+      }
+      footer {
+        background-color: #eee;
+        text-align: center;
+        padding: 10px;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+      }
+      #assignment-query {
+        display: none;
+        background-color: #f9f9f9;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      #assignment-query h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+      #assignment-query button {
+        background-color: #5bc0de;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        margin: 5px;
+        cursor: pointer;
+      }
+      #assignment-query button:hover {
+        background-color: #31b0d5;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      table,
+      th,
+      td {
+        border: 1px solid #ddd;
+      }
+      th,
+      td {
+        padding: 10px;
+        text-align: left;
+      }
+      th {
+        background-color: #004080;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Faculty Dashboard - College of Engineering Guindy</h1>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </header>
 
-  async function fetchFacultyAssignments() {
-  try {
-    const response = await fetch("/get-faculty-assignments");  // Fetch assignments based on facultyId
-    const assignments = await response.json();
+    <main>
+      <div class="dashboard-card">
+        <h2 class="card-title">Welcome, Faculty Member!</h2>
+        <p>
+          This is your dashboard where you can manage your profile, view
+          schedules, and handle academic responsibilities.
+        </p>
+      </div>
 
-    const assignmentsList = document.getElementById("assignments-list");
+      <div id="assignerPrompt" style="display: none">
+        <p>You are selected as the question paper assigner. Are you willing?</p>
+        <button onclick="submitResponse('yes')">Yes</button>
+        <button onclick="submitResponse('no')">No</button>
+      </div>
 
-    assignments.forEach((assignment) => {
-      const row = document.createElement("tr");
-      row.innerHTML = `
+      <!-- Faculty Assignment Table -->
+      <div class="dashboard-card">
+        <h3>Your Faculty Assignments</h3>
+        <table id="assignments-table">
+          <thead>
+            <tr>
+              <th>Subject Name</th>
+              <th>Role</th>
+              <th>Number of Questions</th>
+              <th>Regulation</th>
+            </tr>
+          </thead>
+          <tbody id="assignments-list">
+            <!-- Dynamic rows will be added here -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Assignment Query Section -->
+      <div id="assignment-query" class="dashboard-card">
+        <h3>You are selected as the question paper setter, are you willing?</h3>
+        <button onclick="updateAssignmentResponse('yes')">Yes</button>
+        <button onclick="updateAssignmentResponse('no')">No</button>
+      </div>
+    </main>
+
+    <footer>&copy; 2025 Anna University - CEG. All rights reserved.</footer>
+
+    <script>
+      function logout() {
+        // Optional: clear session/localStorage
+        localStorage.clear();
+        alert("Logged out successfully!");
+        window.location.href = "index.html"; // Back to login
+      }
+
+      async function fetchFacultyName() {
+        try {
+          const response = await fetch("/get-faculty-name"); // Fetch faculty's name from backend
+          const data = await response.json();
+          const welcomeMessage = `Welcome, ${
+            data.fullName || "Faculty Member"
+          }!`; // Personalize the message
+          document.querySelector(".card-title").textContent = welcomeMessage;
+        } catch (error) {
+          console.error("Error fetching faculty name:", error);
+        }
+      }
+
+      // Call this function when the page loads to show personalized data
+      window.onload = fetchFacultyName;
+
+      // Fetch the assignment status on page load
+      async function getAssignmentStatus() {
+        try {
+          const response = await fetch("/get-faculty-assignment-status", {
+            method: "GET",
+            credentials: "same-origin", // or 'include' if cross-origin
+          });
+
+          const data = await response.json();
+
+          // If the faculty is assigned and also a question setter, show the prompt
+          if (data.isAssigned && data.isQuestionSetter) {
+            document.getElementById("assignment-query").style.display = "block";
+          }
+        } catch (error) {
+          console.error("Error fetching assignment status:", error);
+        }
+      }
+
+      async function fetchFacultyAssignments() {
+        try {
+          const response = await fetch("/get-faculty-assignment-status"); // Fetch assignments based on facultyId
+          const assignment = await response.json();
+          if (!assignment.role) {
+            return;
+          }
+
+          const assignmentsList = document.getElementById("assignments-list");
+
+          const row = document.createElement("tr");
+          row.innerHTML = `
         <td>${assignment.subjectName}</td>
         <td>${assignment.role}</td>
         <td>${assignment.numberOfQuestions}</td>
         <td>${assignment.regulation}</td>
       `;
-      assignmentsList.appendChild(row);
-    });
-  } catch (error) {
-    console.error("Error fetching faculty assignments:", error);
-  }
-}
 
-// Call this function when the page loads to show the assignments
-window.onload = () => {
-  fetchFacultyAssignments();
-  fetchFacultyName();  // Fetch and display faculty name
-};
+          assignmentsList.appendChild(row);
+        } catch (error) {
+          console.error("Error fetching faculty assignments:", error);
+        }
+      }
 
+      // Call this function when the page loads to show the assignments
+      window.onload = () => {
+        fetchFacultyAssignments();
+        fetchFacultyName(); // Fetch and display faculty name
+      };
 
-  document.addEventListener("DOMContentLoaded", fetchFacultyAssignments);
+      document.addEventListener("DOMContentLoaded", fetchFacultyAssignments);
 
-  // Handle the faculty's response to the assignment
-  async function updateAssignmentResponse(response) {
-    try {
-      const res = await fetch('/update-faculty-assignment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ response })
-      });
+      // Handle the faculty's response to the assignment
+      async function updateAssignmentResponse(response) {
+        try {
+          const res = await fetch("/update-faculty-assignment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ response }),
+          });
 
-      const data = await res.json();
-      alert(data.message);
-      document.getElementById('assignment-query').style.display = 'none'; // Hide the query after response
-    } catch (error) {
-      console.error('Error updating assignment response:', error);
-    }
-  }
+          const data = await res.json();
+          alert(data.message);
+          document.getElementById("assignment-query").style.display = "none"; // Hide the query after response
+        } catch (error) {
+          console.error("Error updating assignment response:", error);
+        }
+      }
 
-  // Call getAssignmentStatus when the page loads
-  window.onload = getAssignmentStatus;
+      // Call getAssignmentStatus when the page loads
+      window.onload = getAssignmentStatus;
 
-  async function checkPrompt() {
-    const res = await fetch('/get-question-assigner-status');
-    const data = await res.json();
-    if (data.prompt) {
-        document.getElementById('assignerPrompt').style.display = 'block';
-    }
-}
-async function submitResponse(response) {
-    await fetch('/respond-question-assigner', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ response })
-    });
-    document.getElementById('assignerPrompt').innerHTML = '<p>Thanks for your response.</p>';
-}
-checkPrompt();
+      async function checkPrompt() {
+        const res = await fetch("/get-question-assigner-status");
+        const data = await res.json();
+        if (data.prompt) {
+          document.getElementById("assignerPrompt").style.display = "block";
+        }
+      }
+      async function submitResponse(response) {
+        await fetch("/respond-question-assigner", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ response }),
+        });
+        document.getElementById("assignerPrompt").innerHTML =
+          "<p>Thanks for your response.</p>";
+      }
+      checkPrompt();
 
-window.onload = function() {
-  checkPrompt();
-}
-
-</script>
-
-</body>
+      window.onload = function () {
+        checkPrompt();
+      };
+    </script>
+  </body>
 </html>

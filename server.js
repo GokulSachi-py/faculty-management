@@ -9,11 +9,15 @@ const app = express();
 const PORT = 3000;
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:3000', // Change to your frontend URL
+    credentials: true // Allow cookies to be sent
+}));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
 app.use(session({
-    secret: 'mysecretkey',
+    secret: 'your-secret-key',
     resave: false,
     saveUninitialized: true
 }));
@@ -68,7 +72,8 @@ const facultyAssignmentSchema = new mongoose.Schema({
     subjectName: String,
     numberOfQuestions: Number,
     regulation: String,
-    role: String
+    role: String,
+    isAssigned: Boolean,
 });
 
 const questionAssignerSchema = new mongoose.Schema({
@@ -116,7 +121,8 @@ app.post('/save-faculty-assignment', async (req, res) => {
             subjectName,
             numberOfQuestions: Number(numberOfQuestions),
             regulation,
-            role
+            role,
+            isAssigned: false
         });
 
         await newFacultyAssignment.save();
@@ -164,20 +170,27 @@ app.get('/api/faculty-assignments', async (req, res) => {
 });
 
 app.get('/get-faculty-assignment-status', async (req, res) => {
-    if (!req.session.user || !req.session.user.facultyId) {
-        return res.status(401).json({ message: "User session not found." });
-    }
+    // if (!req.session.user || !req.session.user.facultyId) {
+    //     return res.status(401).json({ message: "User session not found." });
+    // }
+
+    console.log(req)
 
     const facultyId = req.session.user.facultyId;
+    console.log(facultyId)
 
-    const extraDetails = await ExtraDetails.findOne({ facultyId });
+    const extraDetails = await FacultyAssignment.findOne({ facultyId });
     if (!extraDetails) {
         return res.status(404).json({ message: 'Faculty not found' });
     }
-    
+
     res.status(200).json({
         isAssigned: extraDetails.isAssigned || false,
-        assignedSubject: extraDetails.assignedSubject || ''
+        assignedSubject: extraDetails.assignedSubject || '',
+        subjectName: extraDetails.subjectName,
+        role: extraDetails.role,
+        numberOfQuestions: extraDetails.numberOfQuestions,
+        regulation: extraDetails.regulation
     });
 });
 
@@ -239,7 +252,7 @@ app.post('/remove-faculty-assignment', async (req, res) => {
 });
 
 app.post("/signup", async (req, res) => {
-    const { username, password, role = 'faculty', facultyId } = req.body;
+    const { username, password, role = 'faculty', facultyId = "1000" } = req.body;
 
     if (!username || !password) {
         return res.status(400).json({ message: "Username and password are required." });
@@ -251,8 +264,12 @@ app.post("/signup", async (req, res) => {
             return res.status(400).json({ message: "User already exists." });
         }
 
+        // facultyId = facultyId || Math.floor(Math.random() * 100000)
+
+
         const newUser = new User({ username, password, role: role.toLowerCase(), facultyId });
         await newUser.save();
+        req.session.user = newUser;
 
         res.status(201).json({ message: "Signup successful!" });
     } catch (error) {
@@ -275,6 +292,8 @@ app.post('/signup-details', async (req, res) => {
         if (existing) {
             return res.status(400).json({ message: "Details already submitted." });
         }
+
+        await User.updateOne({ username }, { $set: { facultyId } })
 
         const extraDetails = new ExtraDetails({
             username, fullName, dob, facultyId, address, campus, campusName,
@@ -340,6 +359,8 @@ app.post('/faculty_login', async (req, res) => {
             role: user.role,
             facultyId: user.facultyId
         };
+
+        console.log(req.session.user)
 
         res.status(200).json({ message: "Login successful!" });
     } catch (error) {
