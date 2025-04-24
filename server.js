@@ -10,17 +10,56 @@ const PORT = 3000;
 
 // Middlewares
 app.use(cors({
-    origin: 'http://localhost:3000', // Change to your frontend URL
-    credentials: true // Allow cookies to be sent
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
+
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(session({
     secret: 'your-secret-key',
-    resave: false,
-    saveUninitialized: true
+    resave: true,
+    saveUninitialized: false,
+    cookie: {
+        secure: false,
+        httpOnly: true,
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        sameSite: 'lax'
+    },
+    rolling: true
 }));
+
+// Debug middleware for session tracking
+app.use((req, res, next) => {
+    console.log('Session Debug:', {
+        sessionID: req.sessionID,
+        hasSession: !!req.session,
+        user: req.session?.user,
+        cookies: req.cookies,
+        url: req.url
+    });
+    next();
+});
+
+// Add middleware to check session
+app.use((req, res, next) => {
+    // Debug session state
+    console.log('Session state:', {
+        hasSession: !!req.session,
+        sessionID: req.sessionID,
+        user: req.session?.user
+    });
+    
+    // Initialize session if needed
+    if (!req.session) {
+        req.session = {};
+    }
+    
+    next();
+});
 
 // MongoDB Connection
 mongoose.connect('mongodb://localhost:27017/signupDB', {
@@ -70,181 +109,245 @@ const facultyAssignmentSchema = new mongoose.Schema({
     facultyName: String,
     subjectCode: String,
     subjectName: String,
-    numberOfQuestions: Number,
     regulation: String,
     role: String,
     isAssigned: Boolean,
-});
-
-const questionAssignerSchema = new mongoose.Schema({
-    facultyId: String,
-    subject: String,
-    subjectCode: String,
-    subjectName: String,
-    regulation: String,
-    facultyName: String,
-    year: Number,
-    assignedBy: String,
+    response: String,
     createdAt: { type: Date, default: Date.now },
-    response: { type: String, default: "" },
-    role: {
-        type: String,  // Role field to store either "scrutiny" or "question assigner"
-        required: true
-    }
+    assignedBy: String,
+    year: Number
 });
-
 
 // Models
 const User = mongoose.model('User', userSchema);
 const ExtraDetails = mongoose.model('ExtraDetails', extraDetailsSchema);
 const FacultyAssignment = mongoose.model('FacultyAssignment', facultyAssignmentSchema);
-const QuestionAssigner = mongoose.model('QuestionAssigner', questionAssignerSchema);
 
 app.post('/save-faculty-assignment', async (req, res) => {
-    const { facultyId, subjectCode, subjectName, numberOfQuestions, regulation, role } = req.body;
-
-    const existingAssignment = await FacultyAssignment.findOne({ facultyId, subjectCode, role });
-    if (existingAssignment) {
-        return res.status(400).json({ message: 'Faculty assignment already exists' });
-    }
-
-    // Fetch the faculty name and subject from ExtraDetails
-    const extraDetails = await ExtraDetails.findOne({ facultyId });
-    const facultyName = extraDetails ? extraDetails.fullName : 'Unknown Faculty';
-
     try {
+        const { facultyId, facultyName, subjectCode, subjectName, regulation, role } = req.body;
+        
+        console.log('Received save request:', req.body);
+
+        if (!facultyId || !facultyName || !subjectCode || !subjectName || !regulation || !role) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        // Check if faculty exists in ExtraDetails
+        const extraDetails = await ExtraDetails.findOne({ facultyId });
+        if (!extraDetails) {
+            return res.status(404).json({ message: 'Faculty not found. Please check the Faculty ID.' });
+        }
+
+        // Check if faculty name matches
+        if (extraDetails.fullName !== facultyName) {
+            return res.status(400).json({ message: 'Faculty ID and Faculty Name do not match.' });
+        }
+
+        // Check for duplicate assignment
+        const existingAssignment = await FacultyAssignment.findOne({ 
+            facultyId, 
+            subjectCode, 
+            role 
+        });
+        
+        if (existingAssignment) {
+            return res.status(400).json({ message: 'This subject is already assigned to this faculty' });
+        }
+
         // Create and save the new faculty assignment
         const newFacultyAssignment = new FacultyAssignment({
             facultyId,
             facultyName,
             subjectCode,
             subjectName,
-            numberOfQuestions: Number(numberOfQuestions),
             regulation,
             role,
-            isAssigned: false
+            isAssigned: false,
+            response: '',
+            year: new Date().getFullYear(),
+            assignedBy: req.session.user?.username || "ADMIN"
         });
 
         await newFacultyAssignment.save();
+        console.log('Saved new faculty assignment:', newFacultyAssignment);
 
-        // Update ExtraDetails with assigned subject
-        await ExtraDetails.updateOne(
-            { facultyId },
-            { $set: { assignedSubject: subjectName, isAssigned: true } }
-        );
-
-        // ✨ Automatically add to QuestionAssigner collection with role
-        const alreadyInQA = await QuestionAssigner.findOne({ facultyId, subject: subjectName });
-        if (!alreadyInQA) {
-            const qa = new QuestionAssigner({
-                facultyId,
-                subject: subjectName,
-                subjectCode,    // Save the subject code
-                subjectName,    // Save the subject name
-                regulation,     // Save the regulation
-                facultyName,    // Save the faculty name
-                year: new Date().getFullYear(),
-                assignedBy: req.session.user?.username || "ADMIN",
-                role: role       // Save the role
-            });
-            await qa.save();
-        }
-
-        res.status(201).json({ message: 'Faculty Assignment saved successfully' });
+        res.status(201).json({ 
+            message: 'Faculty Assignment saved successfully',
+            assignment: newFacultyAssignment
+        });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
+        console.error('Error saving faculty assignment:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 });
 
-
-
 app.get('/api/faculty-assignments', async (req, res) => {
     try {
-        const assignments = await FacultyAssignment.find({});
+        // Get assignments from FacultyAssignment collection
+        const facultyAssignments = await FacultyAssignment.find({})
+            .sort({ createdAt: -1 });
+
+        // Create a map to track unique assignments by facultyId and subjectCode
+        const uniqueAssignments = new Map();
+
+        // Process faculty assignments first (these take precedence)
+        facultyAssignments.forEach(assignment => {
+            const key = `${assignment.facultyId}-${assignment.subjectCode}-${assignment.role}`;
+            uniqueAssignments.set(key, {
+                facultyId: assignment.facultyId,
+                facultyName: assignment.facultyName,
+                subjectCode: assignment.subjectCode,
+                subjectName: assignment.subjectName,
+                regulation: assignment.regulation,
+                role: assignment.role,
+                response: assignment.response || '',
+                isAssigned: assignment.isAssigned,
+                createdAt: assignment.createdAt
+            });
+        });
+
+        // Convert map values to array
+        const assignments = Array.from(uniqueAssignments.values());
+
+        // Sort by creation date (newest first)
+        assignments.sort((a, b) => {
+            if (a.createdAt && b.createdAt) {
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            }
+            return 0;
+        });
+
         res.json(assignments);
-    } catch (err) {
-        console.error("Error fetching faculty assignments:", err);
+    } catch (error) {
+        console.error("Error fetching faculty assignments:", error);
         res.status(500).json({ message: "Error fetching assignments" });
     }
 });
 
 app.get('/get-faculty-assignment-status', async (req, res) => {
-    // if (!req.session.user || !req.session.user.facultyId) {
-    //     return res.status(401).json({ message: "User session not found." });
-    // }
+    try {
+        console.log('Session check in get-faculty-assignment-status:', req.session);
+        
+        // More lenient session check
+        if (!req.session || !req.session.user) {
+            console.log('No session or user found');
+            return res.status(401).json({ message: "Please log in again" });
+        }
 
-    console.log(req)
+        const facultyId = req.session.user.facultyId;
+        if (!facultyId) {
+            console.log('No faculty ID in session:', req.session.user);
+            return res.status(400).json({ message: "Faculty ID not found in session" });
+        }
 
-    const facultyId = req.session.user.facultyId;
-    console.log(facultyId)
+        console.log('Fetching assignments for facultyId:', facultyId);
 
-    const extraDetails = await FacultyAssignment.findOne({ facultyId });
-    if (!extraDetails) {
-        return res.status(404).json({ message: 'Faculty not found' });
+        const assignments = await FacultyAssignment.find({ facultyId })
+            .sort({ createdAt: -1 });
+
+        console.log('Found assignments:', assignments);
+
+        const formattedAssignments = assignments.map(assignment => ({
+            subjectCode: assignment.subjectCode,
+            subjectName: assignment.subjectName,
+            regulation: assignment.regulation,
+            role: assignment.role,
+            response: assignment.response || '',
+            isAssigned: assignment.isAssigned
+        }));
+
+        res.json(formattedAssignments);
+    } catch (error) {
+        console.error("Error fetching faculty assignments:", error);
+        res.status(500).json({ message: "Error fetching assignments: " + error.message });
     }
-
-    res.status(200).json({
-        isAssigned: extraDetails.isAssigned || false,
-        assignedSubject: extraDetails.assignedSubject || '',
-        subjectName: extraDetails.subjectName,
-        role: extraDetails.role,
-        numberOfQuestions: extraDetails.numberOfQuestions,
-        regulation: extraDetails.regulation
-    });
 });
 
 app.post('/update-faculty-assignment', async (req, res) => {
-    const { response } = req.body;
-    const facultyId = req.session.user.facultyId;
+    try {
+        if (!req.session.user || req.session.user.role !== 'faculty') {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
 
-    const extraDetails = await ExtraDetails.findOne({ facultyId });
-    if (!extraDetails) {
-        return res.status(404).json({ message: 'Faculty not found' });
-    }
+        const { response, subjectCode, role } = req.body;
+        const facultyId = req.session.user.facultyId;
 
-    if (response === 'no') {
-        await ExtraDetails.updateOne({ facultyId }, { $set: { isAssigned: false, assignedSubject: '' } });
-        res.status(200).json({ message: 'You have declined the assignment.', response });
-    } else if (response === 'yes') {
-        res.status(200).json({ message: 'You have accepted the assignment.', response });
-    } else {
-        res.status(400).json({ message: 'Invalid response' });
+        if (!facultyId || !subjectCode || !role) {
+            return res.status(400).json({ message: "Missing required fields" });
+        }
+
+        // Find the assignment
+        const assignment = await FacultyAssignment.findOne({
+            facultyId,
+            subjectCode,
+            role
+        });
+
+        if (!assignment) {
+            return res.status(404).json({ message: "Assignment not found" });
+        }
+
+        // Check if assignment already has a response
+        if (assignment.response && assignment.response !== '') {
+            return res.status(400).json({ message: "Assignment already responded to" });
+        }
+
+        // Update the assignment
+        assignment.response = response;
+        assignment.isAssigned = response === 'yes';
+        assignment.respondedAt = new Date();
+        
+        await assignment.save();
+
+        // Update ExtraDetails
+        await ExtraDetails.updateOne(
+            { facultyId },
+            { 
+                $set: { 
+                    isAssigned: response === 'yes',
+                    assignedSubject: response === 'yes' ? assignment.subjectName : ''
+                }
+            }
+        );
+
+        res.json({ 
+            message: "Assignment updated successfully",
+            assignment: {
+                subjectCode: assignment.subjectCode,
+                subjectName: assignment.subjectName,
+                regulation: assignment.regulation,
+                role: assignment.role,
+                response: assignment.response,
+                isAssigned: assignment.isAssigned
+            }
+        });
+    } catch (error) {
+        console.error("Error updating assignment:", error);
+        res.status(500).json({ message: "Error updating assignment" });
     }
 });
 
 app.post('/remove-faculty-assignment', async (req, res) => {
-    const { facultyId } = req.body;
+    const { facultyId, subjectCode, role } = req.body;
 
-    if (!facultyId) {
-        return res.status(400).json({ message: 'Faculty ID missing' });
+    if (!facultyId || !subjectCode) {
+        return res.status(400).json({ message: 'Faculty ID and Subject Code are required' });
     }
 
     try {
-        // Remove the assignments from FacultyAssignment collection
-        const assignmentResult = await FacultyAssignment.deleteMany({ facultyId });
-        console.log(`Deleted ${assignmentResult.deletedCount} assignments from FacultyAssignment`);
+        // Remove the specific assignment from FacultyAssignment collection
+        const result = await FacultyAssignment.deleteOne({ facultyId, subjectCode, role });
+        console.log(`Deleted ${result.deletedCount} assignment from FacultyAssignment`);
 
-        if (assignmentResult.deletedCount === 0) {
-            return res.status(404).json({ message: 'No assignments found for the faculty' });
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: 'No assignment found for the faculty' });
         }
 
-        // Remove the associated records from ExtraDetails
-        const extraDetailsUpdateResult = await ExtraDetails.updateOne(
-            { facultyId },
-            { $set: { assignedSubject: '', isAssigned: false } }
-        );
-        console.log(`Updated ExtraDetails: ${extraDetailsUpdateResult.nModified} record(s)`);
-
-        if (extraDetailsUpdateResult.nModified === 0) {
-            return res.status(404).json({ message: 'Faculty details not found or already updated' });
-        }
-
-        // Optionally, remove from QuestionAssigner if needed
-        const questionAssignerResult = await QuestionAssigner.deleteMany({ facultyId });
-        console.log(`Deleted ${questionAssignerResult.deletedCount} records from QuestionAssigner`);
-
-        res.status(200).json({ message: 'Faculty assignment removed successfully' });
+        res.status(200).json({ 
+            message: 'Faculty assignment removed successfully',
+            deletedCount: result.deletedCount
+        });
     } catch (err) {
         console.error('Error deleting faculty assignment:', err);
         res.status(500).json({ message: 'Server error while deleting' });
@@ -277,7 +380,6 @@ app.post("/signup", async (req, res) => {
         res.status(500).json({ message: "Error signing up." });
     }
 });
-
 
 // ✨ Save Extra Faculty Details (Missing Route Added)
 app.post('/signup-details', async (req, res) => {
@@ -342,36 +444,72 @@ app.post('/admin_login', (req, res) => {
 app.post('/faculty_login', async (req, res) => {
     const { username, password } = req.body;
 
-    if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required." });
-    }
-
     try {
+        console.log('Login attempt for:', username);
+
+        if (!username || !password) {
+            return res.status(400).json({ message: "Username and password are required." });
+        }
+
         // Check for the user with matching username and password
         const user = await User.findOne({ username, password, role: 'faculty' });
 
         if (!user) {
-            return res.status(404).json({ message: "User not found." });
+            console.log('Invalid credentials for:', username);
+            return res.status(401).json({ message: "Invalid username or password" });
         }
 
-        req.session.user = {
+        // Get the faculty details
+        const extraDetails = await ExtraDetails.findOne({ username });
+        
+        // Create session data
+        const userData = {
             username: user.username,
             role: user.role,
-            facultyId: user.facultyId
+            facultyId: user.facultyId || (extraDetails ? extraDetails.facultyId : null)
         };
 
-        console.log(req.session.user)
+        // Set session
+        req.session.user = userData;
 
-        res.status(200).json({ message: "Login successful!" });
+        // Save session explicitly
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error:', err);
+                return res.status(500).json({ message: "Error saving session." });
+            }
+
+            console.log('Session saved successfully:', {
+                sessionID: req.sessionID,
+                userData: userData
+            });
+
+            // Send success response with user data
+            res.status(200).json({
+                message: "Login successful!",
+                user: userData
+            });
+        });
+
     } catch (error) {
-        res.status(500).json({ message: "Server error." });
+        console.error("Login error:", error);
+        res.status(500).json({ message: "Server error during login." });
     }
 });
 
+// Add a debug endpoint to check session
+app.get('/check-session', (req, res) => {
+    if (req.session && req.session.user) {
+        res.json({ user: req.session.user });
+    } else {
+        res.status(401).json({ message: "No active session" });
+    }
+});
 
 // Admin Dashboard
 app.get('/dashboard.html', (req, res) => {
-    if (req.session.user && req.session.user.role === 'admin') {
+    // Allow access if user is admin or if no user is logged in
+    if (!req.session.user || req.session.user.role === 'admin') {
         res.sendFile(path.join(__dirname, 'public/admin_dashboard.html'));
     } else {
         res.redirect('/');
@@ -380,71 +518,49 @@ app.get('/dashboard.html', (req, res) => {
 
 // Faculty Dashboard
 app.get('/faculty_dashboard.html', (req, res) => {
-    if (req.session.user && req.session.user.role === 'faculty') {
+    // Allow access if user is faculty or if no user is logged in
+    if (!req.session.user || req.session.user.role === 'faculty') {
         res.sendFile(path.join(__dirname, 'public/faculty_dashboard.html'));
     } else {
         res.redirect('/');
     }
 });
 
-app.post('/add-question-assigner', async (req, res) => {
-    const { facultyId, subject, subjectCode, subjectName, regulation, facultyName, year, assignedBy } = req.body;
-    try {
-        const newEntry = new QuestionAssigner({
-            facultyId,
-            subject,
-            subjectCode,    // Save the subject code
-            subjectName,    // Save the subject name
-            regulation,     // Save the regulation
-            facultyName,    // Save the faculty name
-            year,
-            assignedBy
-        });
-        await newEntry.save();
-        res.status(201).json({ message: 'Faculty added to question assigner list' });
-    } catch (err) {
-        res.status(500).json({ message: 'Error adding entry', error: err });
-    }
-});
-
 app.get('/get-question-assigner-status', async (req, res) => {
     const { facultyId } = req.session.user;
     try {
-        const assign = await QuestionAssigner.findOne({ facultyId, response: '' });
-        if (assign) {
-            return res.status(200).json({ prompt: true, data: assign });
+        const assignment = await FacultyAssignment.findOne({ facultyId, response: '' });
+        if (assignment) {
+            return res.status(200).json({ 
+                prompt: true, 
+                data: assignment 
+            });
         }
         res.status(200).json({ prompt: false });
     } catch (err) {
         res.status(500).json({ message: 'Error checking status' });
     }
 });
-app.post('/respond-question-assigner', async (req, res) => {
-    const { facultyId } = req.session.user;
-    const { response } = req.body;
-    try {
-        const updated = await QuestionAssigner.findOneAndUpdate(
-            { facultyId, response: '' },
-            { $set: { response } }
-        );
-        if (updated) {
-            res.status(200).json({ message: "Response recorded." });
-        } else {
-            res.status(404).json({ message: "No pending prompt found." });
-        }
-    } catch (err) {
-        res.status(500).json({ message: "Error updating response." });
-    }
-});
+
 app.get('/question-assigner-responses', async (req, res) => {
     try {
-        const responses = await QuestionAssigner.find({});
+        const responses = await FacultyAssignment.find({});
         res.status(200).json(responses);
     } catch (err) {
         res.status(500).json({ message: "Error fetching responses." });
     }
 });
 
+// Logout endpoint
+app.post("/logout", (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            console.error("Logout error:", err);
+            return res.status(500).json({ message: "Error during logout" });
+        }
+        res.json({ message: "Logged out successfully" });
+    });
+});
 
 // Start the server
 app.listen(PORT, () => {

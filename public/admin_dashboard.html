@@ -125,6 +125,7 @@
       .question-paper-table {
         width: 100%;
         border-collapse: collapse;
+        table-layout: fixed;
       }
 
       .question-paper-table th,
@@ -132,11 +133,16 @@
         border: 1px solid #ddd;
         padding: 10px;
         text-align: center;
+        word-wrap: break-word;
+        min-width: 100px;
+        vertical-align: middle;
       }
 
       .question-paper-table th {
         background-color: #0f83ff;
         color: white;
+        position: sticky;
+        top: 0;
       }
 
       #add-faculty-button {
@@ -150,10 +156,22 @@
       }
 
       .input-field {
-        width: 90%;
-        padding: 5px;
-        border-radius: 5px;
+        width: 100%;
+        padding: 8px;
         border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+        margin: 2px 0;
+        display: block;
+      }
+
+      .input-field:focus {
+        border-color: #0f83ff;
+        outline: none;
+      }
+
+      select.input-field {
+        background-color: white;
       }
 
       .save-button,
@@ -203,6 +221,25 @@
       .remove-button:hover {
         background-color: darkred;
       }
+
+      #faculty-table-body {
+        display: table-row-group;
+      }
+
+      #faculty-table-body tr {
+        display: table-row;
+      }
+
+      #faculty-table-body td {
+        display: table-cell;
+        position: relative;
+      }
+
+      .input-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
     </style>
   </head>
 
@@ -227,9 +264,7 @@
       </ul>
     </div>
 
-    <a href="/logout" onclick="return confirmLogout()" class="logout-link"
-      >Logout</a
-    >
+    <a href="#" onclick="logout()" class="logout-link">Logout</a>
 
     <button class="toggle-sidebar-btn" onclick="toggleSidebar()">☰</button>
 
@@ -252,13 +287,11 @@
                 <th>Serial No</th>
                 <th>Faculty ID</th>
                 <th>Faculty Name</th>
-                <th>Subject Code</th>
-                <th>Subject Name</th>
-                <th>Number of Questions</th>
+                <th>Subject</th>
                 <th>Regulation</th>
                 <th>Role</th>
-                <th>Response</th>
                 <th>Actions</th>
+                <th>Response</th>
               </tr>
             </thead>
             <tbody id="faculty-table-body"></tbody>
@@ -282,6 +315,9 @@
     <script>
       const facultyTableBody = document.getElementById("faculty-table-body");
 
+      let refreshInterval = null;
+      let isInputActive = false;
+
       function toggleSidebar() {
         document.querySelector(".sidebar").classList.toggle("collapsed");
         document
@@ -290,7 +326,9 @@
       }
 
       function confirmLogout() {
-        return confirm("Do you want to logout?");
+        if (confirm("Do you want to logout?")) {
+          window.location.href = "index.html";
+        }
       }
 
       function showSection(sectionId, clickedLink) {
@@ -307,164 +345,280 @@
       }
 
       function enableSaveButton(row) {
-        const inputs = row.querySelectorAll("input, select");
-        const allFilled = Array.from(inputs).every(
-          (input) => input.value.trim() !== ""
-        );
-        row.querySelector(".save-button").disabled = !allFilled;
+        const inputs = row.querySelectorAll('input[required], select[required]');
+        const saveButton = row.querySelector('.save-button');
+        const isValid = Array.from(inputs).every(input => input.value.trim() !== '');
+        saveButton.disabled = !isValid;
       }
 
+      // Add subject mapping
+      const subjects = {
+        'CS8651': 'Internet Programming',
+        'CS8691': 'Artificial Intelligence',
+        'CS8601': 'Mobile Computing',
+        'CS8602': 'Compiler Design',
+        'CS8603': 'Distributed Systems'
+      };
+
       function addRow() {
-        const newRow = facultyTableBody.insertRow();
+        stopPeriodicRefresh();
+        isInputActive = true;
+        
+        // Clear any error messages or "No assignments found" message
+        if (facultyTableBody.innerHTML.includes('colspan="8"')) {
+            facultyTableBody.innerHTML = '';
+        }
+        
+        const newRow = facultyTableBody.insertRow(0);
         newRow.innerHTML = `
-        <td></td>
-        <td><input class="input-field" type="text" placeholder="Faculty ID" oninput="enableSaveButton(this.closest('tr'))"></td>
-        <td><input class="input-field" type="text" placeholder="Faculty Name" oninput="enableSaveButton(this.closest('tr'))"></td>
-        <td><input class="input-field" type="text" placeholder="Subject Code" oninput="enableSaveButton(this.closest('tr'))"></td>
-        <td><input class="input-field" type="text" placeholder="Subject Name" oninput="enableSaveButton(this.closest('tr'))"></td>
-        <td><input class="input-field" type="number" placeholder="No. of Questions" oninput="enableSaveButton(this.closest('tr'))"></td>
-        <td>
-          <select class="input-field" onchange="enableSaveButton(this.closest('tr'))">
-            <option value="">Select Regulation</option>
-            <option value="R1">R1</option>
-            <option value="R2">R2</option>
-          </select>
-        </td>
-        <td>
-          <select class="input-field" onchange="enableSaveButton(this.closest('tr'))">
-            <option value="">Select Role</option>
-            <option value="Paper Setter">Paper Setter</option>
-            <option value="Scrutinizer">Scrutinizer</option>
-          </select>
-        </td>
-        <td></td>
-        <td>
-          <button class="save-button" onclick="saveFacultyRow(this.closest('tr'))" disabled>Save</button>
-          <button class="cancel-button" onclick="this.closest('tr').remove(); updateRowNumbers();">Cancel</button>
-        </td>
-      `;
+            <td>1</td>
+            <td><div class="input-container"><input class="input-field" type="text" placeholder="Faculty ID" oninput="enableSaveButton(this.closest('tr'))" required></div></td>
+            <td><div class="input-container"><input class="input-field" type="text" placeholder="Faculty Name" oninput="enableSaveButton(this.closest('tr'))" required></div></td>
+            <td>
+                <div class="input-container">
+                    <select class="input-field" onchange="enableSaveButton(this.closest('tr'))" required>
+                        <option value="">Select Subject</option>
+                        ${Object.entries(subjects).map(([code, name]) => 
+                            `<option value="${code}">${code} - ${name}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+            </td>
+            <td>
+                <div class="input-container">
+                    <select class="input-field" onchange="enableSaveButton(this.closest('tr'))" required>
+                        <option value="">Select Regulation</option>
+                        <option value="R1">R1</option>
+                        <option value="R2">R2</option>
+                    </select>
+                </div>
+            </td>
+            <td>
+                <div class="input-container">
+                    <select class="input-field" onchange="enableSaveButton(this.closest('tr'))" required>
+                        <option value="">Select Role</option>
+                        <option value="Paper Setter">Paper Setter</option>
+                        <option value="Scrutinizer">Scrutinizer</option>
+                    </select>
+                </div>
+            </td>
+            <td>
+                <button class="save-button" onclick="saveFacultyRow(this.closest('tr'))" disabled>Save</button>
+                <button class="cancel-button" onclick="cancelRow(this.closest('tr'))">Cancel</button>
+            </td>
+            <td>Pending</td>
+        `;
         updateRowNumbers();
       }
 
-      async function saveFacultyRow(row) {
-        const facultyId = row
-          .querySelector('input[placeholder="Faculty ID"]')
-          .value.trim();
-        const facultyName = row
-          .querySelector('input[placeholder="Faculty Name"]')
-          .value.trim();
-        const subjectCode = row
-          .querySelector('input[placeholder="Subject Code"]')
-          .value.trim();
-        const subjectName = row
-          .querySelector('input[placeholder="Subject Name"]')
-          .value.trim();
-        const numberOfQuestions = row
-          .querySelector('input[placeholder="No. of Questions"]')
-          .value.trim();
-        const regulation = row.querySelectorAll("select")[0].value.trim();
-        const role = row.querySelectorAll("select")[1].value.trim();
-
-        const data = {
-          facultyId,
-          facultyName,
-          subjectCode,
-          subjectName,
-          numberOfQuestions,
-          regulation,
-          role,
-        };
-
-        try {
-          const response = await fetch("/save-faculty-assignment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-          });
-
-          const result = await response.json();
-          alert(result.message || "Faculty assignment saved");
-
-          if (response.ok) {
-            row.innerHTML = `
-            <td></td>
-            <td>${facultyId}</td>
-            <td>${facultyName}</td>
-            <td>${subjectCode}</td>
-            <td>${subjectName}</td>
-            <td>${numberOfQuestions}</td>
-            <td>${regulation}</td>
-            <td>${role}</td>
-            <td>Pending</td>
-
-            <td><button class="remove-button" onclick="removeFaculty('${facultyId}', this)">Remove</button></td>
-          `;
-            updateRowNumbers();
-          }
-        } catch (error) {
-          console.error("Error saving:", error);
-          alert("Failed to save");
-        }
-      }
-
-      async function removeFaculty(facultyId, button) {
-        if (!confirm("Are you sure?")) return;
-
-        try {
-          const response = await fetch("/remove-faculty-assignment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ facultyId }),
-          });
-
-          const result = await response.json();
-          alert(result.message || "Removed");
-
-          if (response.ok) {
-            button.closest("tr").remove();
-            updateRowNumbers();
-          }
-        } catch (error) {
-          console.error("Remove error:", error);
-          alert("Failed to remove");
-        }
-      }
-
       function updateRowNumbers() {
-        const rows = facultyTableBody.querySelectorAll("tr");
-        rows.forEach((row, index) => {
-          const numberCell = row.querySelector("td:first-child");
-          if (numberCell) numberCell.textContent = index + 1;
+        const rows = Array.from(facultyTableBody.getElementsByTagName('tr'));
+        const validRows = rows.filter(row => !row.innerHTML.includes('colspan="8"'));
+        validRows.forEach((row, index) => {
+            const firstCell = row.cells[0];
+            if (firstCell) {
+                firstCell.textContent = index + 1;
+            }
         });
       }
 
-      async function fetchFacultyAssignments() {
-        try {
-          const response = await fetch("/api/faculty-assignments");
-          const data = await response.json();
+      function cancelRow(row) {
+        isInputActive = false;
+        row.remove();
+        updateRowNumbers();
+        
+        // Check if table is empty and show message if needed
+        if (facultyTableBody.children.length === 0) {
+            facultyTableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center;">No assignments found</td>
+                </tr>
+            `;
+        }
+        
+        startPeriodicRefresh();
+      }
 
-          data.forEach((assignment) => {
-            const newRow = facultyTableBody.insertRow();
-            newRow.innerHTML = `
-            <td></td>
-            <td>${assignment.facultyId}</td>
-            <td>${assignment.facultyName}</td>
-            <td>${assignment.subjectCode}</td>
-            <td>${assignment.subjectName}</td>
-            <td>${assignment.numberOfQuestions}</td>
-            <td>${assignment.regulation}</td>
-            <td>${assignment.role}</td>
-            <td>${assignment.isAssigned}</td>
-            <td><button class="remove-button" onclick="removeFaculty('${assignment.facultyId}', this)">Remove</button></td>
-          `;
+      async function checkSession() {
+        try {
+          const response = await fetch("/check-session", {
+            credentials: "include"
           });
-          updateRowNumbers();
+          const data = await response.json();
+          
+          if (!data.user) {
+            if (data.message === "No active session") {
+              window.location.href = "index.html";
+            }
+            return false;
+          }
+          return true;
         } catch (error) {
-          console.error("Failed to load assignments:", error);
+          console.error("Session check error:", error);
+          return false;
         }
       }
 
-      document.addEventListener("DOMContentLoaded", fetchFacultyAssignments);
+      async function fetchAllFacultyAssignments() {
+        if (isInputActive) return;
+
+        try {
+            const response = await fetch("/api/faculty-assignments", {
+                credentials: "include"
+            });
+            
+            if (!response.ok) {
+                throw new Error("Failed to fetch assignments");
+            }
+
+            const data = await response.json();
+            
+            if (!isInputActive) {
+                facultyTableBody.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    facultyTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="8" style="text-align: center;">No assignments found</td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                const sortedData = data.sort((a, b) => {
+                    if (a.createdAt && b.createdAt) {
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                    }
+                    return 0;
+                });
+
+                sortedData.forEach((assignment, index) => {
+                    const newRow = facultyTableBody.insertRow();
+                    newRow.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${assignment.facultyId || 'N/A'}</td>
+                        <td>${assignment.facultyName || 'N/A'}</td>
+                        <td>${assignment.subjectCode} - ${assignment.subjectName || 'N/A'}</td>
+                        <td>${assignment.regulation || 'N/A'}</td>
+                        <td>${assignment.role || 'N/A'}</td>
+                        <td>
+                            <button class="remove-button" onclick="removeFaculty('${assignment.facultyId}', '${assignment.subjectCode}', '${assignment.role}', this)">Remove</button>
+                        </td>
+                        <td>${assignment.response ? (assignment.response === 'yes' ? 'Accepted' : 'Declined') : 'Pending'}</td>
+                    `;
+                });
+            }
+        } catch (error) {
+            console.error("Fetch error:", error);
+            if (!isInputActive) {
+                facultyTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center;">Error loading assignments</td>
+                    </tr>
+                `;
+            }
+        }
+      }
+
+      // Function to start periodic refresh
+      function startPeriodicRefresh() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+        }
+        refreshInterval = setInterval(fetchAllFacultyAssignments, 30000);
+      }
+
+      // Function to stop periodic refresh
+      function stopPeriodicRefresh() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+            refreshInterval = null;
+        }
+      }
+
+      // Initialize the page
+      window.onload = async function() {
+        await fetchAllFacultyAssignments();
+        startPeriodicRefresh();
+      };
+
+      // Cleanup on page unload
+      window.onbeforeunload = function() {
+        stopPeriodicRefresh();
+      };
+
+      // Function to remove faculty assignment
+      async function removeFaculty(facultyId, subjectCode, role, button) {
+        if (!confirm("Are you sure you want to remove this assignment?")) return;
+
+        try {
+            const response = await fetch("/remove-faculty-assignment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ facultyId, subjectCode, role })
+            });
+
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.message || "Failed to remove assignment");
+            }
+
+            alert(result.message || "Assignment removed successfully");
+            await fetchAllFacultyAssignments();
+
+        } catch (error) {
+            console.error("Remove error:", error);
+            alert(error.message || "Failed to remove assignment");
+        }
+      }
+
+      // Function to save faculty row
+      async function saveFacultyRow(row) {
+        const saveButton = row.querySelector('.save-button');
+        const cancelButton = row.querySelector('.cancel-button');
+        saveButton.disabled = true;
+        cancelButton.disabled = true;
+
+        try {
+            const subjectSelect = row.querySelector('select');
+            const selectedSubject = subjectSelect.value;
+            
+            const data = {
+                facultyId: row.querySelector('input[placeholder="Faculty ID"]').value.trim(),
+                facultyName: row.querySelector('input[placeholder="Faculty Name"]').value.trim(),
+                subjectCode: selectedSubject,
+                subjectName: subjects[selectedSubject],
+                regulation: row.querySelectorAll('select')[1].value.trim(),
+                role: row.querySelectorAll('select')[2].value.trim()
+            };
+
+            const response = await fetch("/save-faculty-assignment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.message || "Error saving assignment");
+            }
+
+            alert(result.message || "Faculty assignment saved successfully");
+            isInputActive = false;
+            await fetchAllFacultyAssignments();
+            startPeriodicRefresh();
+
+        } catch (error) {
+            console.error("Save error:", error);
+            alert(error.message || "Failed to save. Please try again.");
+            saveButton.disabled = false;
+            cancelButton.disabled = false;
+        }
+      }
 
       async function loadResponses() {
         const res = await fetch("/question-assigner-responses");
@@ -485,6 +639,28 @@
         window.onload = function () {
           checkPrompt();
         };
+      }
+
+      async function logout() {
+        if (!confirm('Are you sure you want to logout?')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Logout failed');
+            }
+            
+            window.location.href = '/index.html';
+        } catch (error) {
+            console.error('Logout error:', error);
+            alert('Error during logout. Please try again.');
+        }
       }
     </script>
   </body>

@@ -29,6 +29,65 @@
         max-width: 500px;
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         overflow-y: auto;
+        overflow-x: hidden;
+        box-sizing: border-box;
+        position: relative;
+      }
+      
+      .popup-content form {
+        width: 100%;
+        box-sizing: border-box;
+      }
+      
+      .popup-content input,
+      .popup-content select,
+      .popup-content textarea {
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      #closeFacultyBtn,
+      #closeAdminBtn,
+      #closeExtraBtn {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 28px;
+        font-weight: bold;
+        color: #666;
+        cursor: pointer;
+        border: none;
+        background: none;
+        padding: 0;
+        line-height: 1;
+      }
+
+      #closeFacultyBtn:hover,
+      #closeAdminBtn:hover,
+      #closeExtraBtn:hover {
+        color: #000;
+      }
+
+      .captcha-section {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 15px 0;
+      }
+      
+      .captcha-section input[type="number"] {
+        width: 120px;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .captcha-section .refresh {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
       }
     </style>
   </head>
@@ -68,40 +127,49 @@
           <span id="closeFacultyBtn" onclick="closeLogin()">&times;</span>
           <h2>Faculty Login</h2>
 
-          <label>Username</label>
-          <input type="text" id="username" placeholder="Enter Username" />
+          <form id="facultyLoginForm" autocomplete="off">
+            <label>Username</label>
+            <input 
+              type="text" 
+              id="facultyUsername" 
+              name="facultyUsername"
+              placeholder="Enter Username" 
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false" />
 
-          <label>Password</label>
-          <input type="password" id="password" placeholder="Enter Password" />
+            <label>Password</label>
+            <input 
+              type="password" 
+              id="facultyPassword" 
+              name="facultyPassword"
+              placeholder="Enter Password" 
+              autocomplete="new-password"
+              autocapitalize="off"
+              spellcheck="false" />
 
-          <div class="captcha-section">
-            <span id="facNum1">0</span> + <span id="facNum2">0</span> =
-            <input
-              type="number"
-              id="userSum"
-              placeholder="Enter Sum"
-              style="width: 80px; margin-left: 10px"
-            />
-            <button class="refresh" onclick="generateFacultyNumbers()">
-              ⟳
-            </button>
-          </div>
-
-          <div class="button-group">
-            <a href="#" class="forgot">Forgot Password?</a>
-            <div class="action-buttons">
-              <button type="button" class="signup" onclick="handleSignup()">
-                Sign Up
-              </button>
-              <button
-                type="button"
-                class="login"
-                onclick="validateFacultyLogin()"
-              >
-                Login
-              </button>
+            <div class="captcha-section">
+              <span id="facNum1">0</span> + <span id="facNum2">0</span> =
+              <input type="number" id="userSum" placeholder="Enter Sum" autocomplete="off" />
+              <button type="button" class="refresh" onclick="generateFacultyNumbers()">⟳</button>
             </div>
-          </div>
+
+            <div class="button-group">
+              <a href="#" class="forgot">Forgot Password?</a>
+              <div class="action-buttons">
+                <button type="button" class="signup" onclick="handleSignup()">
+                  Sign Up
+                </button>
+                <button
+                  type="button"
+                  class="login"
+                  onclick="validateFacultyLogin()"
+                >
+                  Login
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
 
@@ -111,42 +179,50 @@
           <span id="closeAdminBtn" onclick="closeAdminLogin()">&times;</span>
           <h2>Admin Login</h2>
 
-          <label>Username</label>
-          <input type="text" id="adminUsername" placeholder="Enter Username" />
+          <form id="adminLoginForm" autocomplete="off">
+            <label>Username</label>
+            <input 
+              type="text" 
+              id="adminUsername" 
+              name="adminUsername"
+              placeholder="Enter Username" 
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false" />
 
-          <label>Password</label>
-          <input
-            type="password"
-            id="adminPassword"
-            placeholder="Enter Password"
-          />
-
-          <div class="captcha-section">
-            <span id="adminNum1">0</span> + <span id="adminNum2">0</span> =
+            <label>Password</label>
             <input
-              type="number"
-              id="adminSum"
-              placeholder="Enter Sum"
-              style="width: 80px; margin-left: 10px"
+              type="password"
+              id="adminPassword"
+              name="adminPassword"
+              placeholder="Enter Password"
+              autocomplete="new-password"
+              autocapitalize="off"
+              spellcheck="false"
             />
-            <button class="refresh" onclick="generateAdminNumbers()">⟳</button>
-          </div>
 
-          <div class="button-group">
-            <a href="#" class="forgot">Forgot Password?</a>
-            <div class="action-buttons">
-              <button class="login" onclick="validateAdminLogin()">
-                Login
-              </button>
+            <div class="captcha-section">
+              <span id="adminNum1">0</span> + <span id="adminNum2">0</span> =
+              <input type="number" id="adminSum" placeholder="Enter Sum" autocomplete="off" />
+              <button type="button" class="refresh" onclick="generateAdminNumbers()">⟳</button>
             </div>
-          </div>
+
+            <div class="button-group">
+              <a href="#" class="forgot">Forgot Password?</a>
+              <div class="action-buttons">
+                <button class="login" onclick="validateAdminLogin()">
+                  Login
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
 
       <!-- Extended Signup Popup -->
       <div id="extraSignupPopup" class="popup">
         <div class="popup-content" style="max-height: 90vh; overflow-y: auto">
-          <span onclick="closeExtraSignup()" id="closeExtraBtn">&times;</span>
+          <span id="closeExtraBtn" onclick="closeExtraSignup()">&times;</span>
           <h2>Extended Signup - Faculty</h2>
 
           <label>Full Name</label>
@@ -269,7 +345,8 @@
         document.getElementById("adminLoginPopup").style.display = "none";
       }
 
-      function generateFacultyNumbers() {
+      function generateFacultyNumbers(event) {
+        if (event) event.preventDefault();
         facNum1 = Math.floor(Math.random() * 100) + 1;
         facNum2 = Math.floor(Math.random() * 100) + 1;
         document.getElementById("facNum1").innerText = facNum1;
@@ -277,7 +354,8 @@
         document.getElementById("userSum").value = "";
       }
 
-      function generateAdminNumbers() {
+      function generateAdminNumbers(event) {
+        if (event) event.preventDefault();
         adminNum1 = Math.floor(Math.random() * 100) + 1;
         adminNum2 = Math.floor(Math.random() * 100) + 1;
         document.getElementById("adminNum1").innerText = adminNum1;
@@ -286,9 +364,9 @@
       }
 
       async function validateFacultyLogin() {
-        const username = document.getElementById("username").value.trim();
-        const password = document.getElementById("password").value.trim();
-        const userSum = parseInt(document.getElementById("userSum").value);
+        const username = document.getElementById('facultyUsername').value.trim();
+        const password = document.getElementById('facultyPassword').value.trim();
+        const userSum = parseInt(document.getElementById('userSum').value);
 
         if (userSum !== facNum1 + facNum2) {
           alert("Captcha incorrect! Please retry.");
@@ -301,18 +379,35 @@
           return;
         }
 
-        const response = await fetch("/faculty_login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
-        });
+        try {
+          console.log('Attempting login...');
+          const response = await fetch('/faculty_login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ username, password })
+          });
 
-        const data = await response.json();
-        if (response.ok) {
-          alert(data.message);
-          window.location.href = "faculty_dashboard.html";
-        } else {
-          alert(data.message);
+          console.log('Login response status:', response.status);
+          const data = await response.json();
+          console.log('Login response data:', data);
+
+          if (response.ok) {
+            // Store session data in localStorage
+            localStorage.setItem('facultySession', JSON.stringify(data.user));
+            alert("Login successful!");
+            window.location.href = '/faculty_dashboard.html';
+          } else {
+            alert(data.message || "Login failed. Please check your credentials.");
+            generateFacultyNumbers();
+          }
+        } catch (error) {
+          console.error('Login error:', error);
+          alert("An error occurred during login. Please try again.");
+          generateFacultyNumbers();
         }
       }
 
@@ -348,8 +443,8 @@
       }
 
       async function handleSignup() {
-        const username = document.getElementById("username").value.trim();
-        const password = document.getElementById("password").value.trim();
+        const username = document.getElementById("facultyUsername").value.trim();
+        const password = document.getElementById("facultyPassword").value.trim();
 
         if (!username || !password) {
           alert("Username and password cannot be empty.");
