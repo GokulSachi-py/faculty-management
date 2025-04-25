@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Faculty Dashboard - CEG</title>
+    <link rel="stylesheet" href="style.css">
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -179,6 +180,22 @@
       }
       .decline-btn:hover {
         background-color: #c82333;
+      }
+      .set-question-paper-btn {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 20px;
+        display: block;
+        text-align: center;
+      }
+
+      .set-question-paper-btn:hover {
+        background-color: #0056b3;
       }
       @media (max-width: 1200px) {
         .pending-grid {
@@ -503,6 +520,35 @@
           clearInterval(refreshInterval);
         }
       };
+
+      async function checkAssignmentAccess() {
+        try {
+          const response = await fetch('/check-assignment-access', {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Access denied');
+          }
+
+          const data = await response.json();
+          if (data.accessGranted) {
+            window.location.href = 'set_question_paper.html';
+          } else {
+            alert('You are not authorized to access this section.');
+          }
+        } catch (error) {
+          console.error('Error checking access:', error);
+          alert('An error occurred while checking access.');
+        }
+      }
     </script>
+
+    <!-- Add a button to navigate to set_question_paper.html -->
+    <button class="set-question-paper-btn" onclick="checkAssignmentAccess()">Set Question Paper</button>
   </body>
 </html>

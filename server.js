@@ -118,10 +118,28 @@ const facultyAssignmentSchema = new mongoose.Schema({
     year: Number
 });
 
+// Mongoose Schema for QuestionPaper
+const questionPaperSchema = new mongoose.Schema({
+    facultyId: { type: String, required: true },
+    examName: { type: String, required: true },
+    department: { type: String, required: true },
+    semester: { type: String, required: true },
+    subjectCode: { type: String, required: true },
+    subjectTitle: { type: String, required: true },
+    regulation: { type: String, required: true },
+    time: { type: String, required: true },
+    maxMarks: { type: String, required: true },
+    partAQuestions: { type: [String], required: true },
+    partBQuestions: { type: [String], required: true },
+    partCQuestions: { type: [String], required: true },
+    createdAt: { type: Date, default: Date.now }
+});
+
 // Models
 const User = mongoose.model('User', userSchema);
 const ExtraDetails = mongoose.model('ExtraDetails', extraDetailsSchema);
 const FacultyAssignment = mongoose.model('FacultyAssignment', facultyAssignmentSchema);
+const QuestionPaper = mongoose.model('QuestionPaper', questionPaperSchema);
 
 app.post('/save-faculty-assignment', async (req, res) => {
     try {
@@ -551,6 +569,27 @@ app.get('/question-assigner-responses', async (req, res) => {
     }
 });
 
+// Endpoint to check if a faculty member has access to set_question_paper.html
+app.get('/check-assignment-access', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.role !== 'faculty') {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const facultyId = req.session.user.facultyId;
+        const assignment = await FacultyAssignment.findOne({ facultyId, response: 'yes' });
+
+        if (assignment) {
+            return res.status(200).json({ accessGranted: true });
+        } else {
+            return res.status(403).json({ accessGranted: false });
+        }
+    } catch (error) {
+        console.error('Error checking assignment access:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Logout endpoint
 app.post("/logout", (req, res) => {
     req.session.destroy((err) => {
@@ -560,6 +599,54 @@ app.post("/logout", (req, res) => {
         }
         res.json({ message: "Logged out successfully" });
     });
+});
+
+app.post('/api/questionpaper', async (req, res) => {
+    try {
+        const {
+            facultyId,
+            examName,
+            department,
+            semester,
+            subjectCode,
+            subjectTitle,
+            regulation,
+            time,
+            maxMarks,
+            partAQuestions,
+            partBQuestions,
+            partCQuestions
+        } = req.body;
+
+        // Validate required fields
+        if (!facultyId || !examName || !department || !semester || !subjectCode || !subjectTitle || !regulation || !time || !maxMarks || !partAQuestions || !partBQuestions || !partCQuestions) {
+            return res.status(400).json({ message: 'All fields are required.' });
+        }
+
+        // Create a new question paper document
+        const newQuestionPaper = new QuestionPaper({
+            facultyId,
+            examName,
+            department,
+            semester,
+            subjectCode,
+            subjectTitle,
+            regulation,
+            time,
+            maxMarks,
+            partAQuestions,
+            partBQuestions,
+            partCQuestions
+        });
+
+        // Save the question paper to the database
+        await newQuestionPaper.save();
+
+        res.status(201).json({ message: 'Question paper saved successfully!' });
+    } catch (error) {
+        console.error('Error saving question paper:', error);
+        res.status(500).json({ message: 'Server error while saving question paper.' });
+    }
 });
 
 // Start the server
