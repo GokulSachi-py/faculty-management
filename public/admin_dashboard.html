@@ -240,6 +240,24 @@
         width: 100%;
         height: 100%;
       }
+
+      .set-question-paper-button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      .set-question-paper-button:hover {
+        background-color: #45a049;
+      }
+
+      .set-question-paper-button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
     </style>
   </head>
 
@@ -292,6 +310,7 @@
                 <th>Role</th>
                 <th>Actions</th>
                 <th>Response</th>
+                <th>Question Paper Status</th>
               </tr>
             </thead>
             <tbody id="faculty-table-body"></tbody>
@@ -407,6 +426,7 @@
                 <button class="cancel-button" onclick="cancelRow(this.closest('tr'))">Cancel</button>
             </td>
             <td>Pending</td>
+            <td>Yet to submit</td>
         `;
         updateRowNumbers();
       }
@@ -505,6 +525,7 @@
                             <button class="remove-button" onclick="removeFaculty('${assignment.facultyId}', '${assignment.subjectCode}', '${assignment.role}', this)">Remove</button>
                         </td>
                         <td>${assignment.response === 'completed' ? 'Completed' : (assignment.response ? (assignment.response === 'yes' ? 'Accepted' : 'Declined') : 'Pending')}</td>
+                        <td>${assignment.questionPaperStatus === 'submitted' ? 'Submitted' : (assignment.questionPaperStatus || 'Yet to submit')}</td>
                     `;
                 });
             }
@@ -662,6 +683,31 @@
             alert('Error during logout. Please try again.');
         }
       }
+
+      async function redirectToSetQuestionPaper(facultyId, subjectCode) {
+        try {
+            const response = await fetch('/check-assignment-access', {
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to check assignment access');
+            }
+
+            const data = await response.json();
+            
+            if (data.accessGranted) {
+                window.location.href = `/set_question_paper.html?facultyId=${facultyId}&subjectCode=${subjectCode}`;
+            } else {
+                alert('You do not have permission to set question papers for this assignment.');
+            }
+        } catch (error) {
+            console.error('Error checking assignment access:', error);
+            alert('Error checking assignment access. Please try again.');
+        }
+      }
+
+      console.log("Assignments received from backend:", data);
     </script>
   </body>
 </html>

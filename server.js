@@ -115,7 +115,8 @@ const facultyAssignmentSchema = new mongoose.Schema({
     response: String,
     createdAt: { type: Date, default: Date.now },
     assignedBy: String,
-    year: Number
+    year: Number,
+    questionPaperStatus: { type: String, enum: ['pending', 'submitted', 'approved', 'rejected'], default: 'pending' }
 });
 
 // Mongoose Schema for QuestionPaper
@@ -221,7 +222,8 @@ app.get('/api/faculty-assignments', async (req, res) => {
                 role: assignment.role,
                 response: assignment.response || '',
                 isAssigned: assignment.isAssigned,
-                createdAt: assignment.createdAt
+                createdAt: assignment.createdAt,
+                questionPaperStatus: assignment.questionPaperStatus
             });
         });
 
@@ -272,7 +274,8 @@ app.get('/get-faculty-assignment-status', async (req, res) => {
             regulation: assignment.regulation,
             role: assignment.role,
             response: assignment.response || '',
-            isAssigned: assignment.isAssigned
+            isAssigned: assignment.isAssigned,
+            questionPaperStatus: assignment.questionPaperStatus
         }));
 
         res.json(formattedAssignments);
@@ -615,11 +618,12 @@ app.post('/api/questionpaper', async (req, res) => {
             maxMarks,
             partAQuestions,
             partBQuestions,
-            partCQuestions
+            partCQuestions,
+            role
         } = req.body;
 
         // Validate required fields
-        if (!facultyId || !examName || !department || !semester || !subjectCode || !subjectTitle || !regulation || !time || !maxMarks || !partAQuestions || !partBQuestions || !partCQuestions) {
+        if (!facultyId || !examName || !department || !semester || !subjectCode || !subjectTitle || !regulation || !time || !maxMarks || !partAQuestions || !partBQuestions || !partCQuestions || !role) {
             return res.status(400).json({ message: 'All fields are required.' });
         }
 
@@ -636,11 +640,32 @@ app.post('/api/questionpaper', async (req, res) => {
             maxMarks,
             partAQuestions,
             partBQuestions,
-            partCQuestions
+            partCQuestions,
+            role
         });
 
         // Save the question paper to the database
         await newQuestionPaper.save();
+
+        // Debug: print the update query
+        console.log('Updating FacultyAssignment:', { facultyId, subjectCode, role });
+
+        // Normalize the role value
+        const normalizedRole = (role || '').trim();
+        // Log all assignments for this faculty and subject before update
+        const assignmentsBefore = await FacultyAssignment.find({ facultyId, subjectCode });
+        console.log('Assignments before update:', assignmentsBefore);
+
+        // Update the faculty assignment status with case-insensitive role match (debug: no response condition)
+        const updateResult = await FacultyAssignment.updateMany(
+            { facultyId, subjectCode, role: { $regex: new RegExp(`^${normalizedRole}$`, 'i') } },
+            { $set: { questionPaperStatus: 'submitted' } }
+        );
+
+        console.log('Update result:', updateResult);
+        // Log all assignments for this faculty and subject after update
+        const assignments = await FacultyAssignment.find({ facultyId, subjectCode });
+        console.log('Assignments after update:', assignments);
 
         res.status(201).json({ message: 'Question paper saved successfully!' });
     } catch (error) {

@@ -151,11 +151,11 @@
       <!-- Header Information -->
       <div class="form-group">
         <label for="examName">Examination Name:</label>
-        <input type="text" id="examName" placeholder="e.g., End Semester Examinations - Nov/Dec 2025" required />
+        <input type="text" id="examName" required readonly />
       </div>
       <div class="form-group">
         <label for="department">Department:</label>
-        <input type="text" id="department" placeholder="e.g., Computer Science and Engineering" required />
+        <input type="text" id="department" required readonly />
       </div>
       <div class="form-group">
         <label for="semester">Semester:</label>
@@ -163,23 +163,23 @@
       </div>
       <div class="form-group">
         <label for="subjectCode">Subject Code:</label>
-        <input type="text" id="subjectCode" placeholder="e.g., CS101" required />
+        <input type="text" id="subjectCode" required readonly />
       </div>
       <div class="form-group">
         <label for="subjectTitle">Subject Title:</label>
-        <input type="text" id="subjectTitle" placeholder="e.g., Data Structures" required />
+        <input type="text" id="subjectTitle" required readonly />
       </div>
       <div class="form-group">
         <label for="regulation">Regulation:</label>
-        <input type="text" id="regulation" placeholder="e.g., Regulation 2018 - RUSA" required />
+        <input type="text" id="regulation" required readonly />
       </div>
       <div class="form-group">
         <label for="time">Time Duration:</label>
-        <input type="text" id="time" placeholder="e.g., 3 Hours" required />
+        <input type="text" id="time" required readonly />
       </div>
       <div class="form-group">
         <label for="maxMarks">Maximum Marks:</label>
-        <input type="text" id="maxMarks" placeholder="e.g., 100" required />
+        <input type="text" id="maxMarks" required readonly />
       </div>
 
       <!-- Part A -->
@@ -315,6 +315,56 @@
   </div>
 
   <script>
+    let facultyId = null;
+    let role = null;
+    // Fetch facultyId from session on page load
+    window.onload = async function() {
+      try {
+        const res = await fetch('/check-session', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          if (!data.user || !data.user.facultyId) {
+            window.location.href = '/index.html';
+            return;
+          }
+          facultyId = data.user.facultyId;
+        } else {
+          window.location.href = '/index.html';
+          return;
+        }
+        // Get role and subjectCode from URL
+        const params = new URLSearchParams(window.location.search);
+        role = params.get('role');
+        const subjectCodeFromUrl = params.get('subjectCode');
+        document.getElementById('subjectCode').value = subjectCodeFromUrl;
+        document.getElementById('subjectCode').readOnly = true;
+        // Autofill and lock other fields
+        document.getElementById('examName').value = 'End Semester examination';
+        document.getElementById('examName').readOnly = true;
+        document.getElementById('department').value = 'Computer Science and Engineering';
+        document.getElementById('department').readOnly = true;
+        document.getElementById('regulation').value = 'R1';
+        document.getElementById('regulation').readOnly = true;
+        document.getElementById('maxMarks').value = '100';
+        document.getElementById('maxMarks').readOnly = true;
+        document.getElementById('time').value = '3 Hours';
+        document.getElementById('time').readOnly = true;
+        // Autofill subject title based on subject code
+        const subjectTitles = {
+          'CS8651': 'Internet Programming',
+          'CS8691': 'Artificial Intelligence',
+          'CS8601': 'Mobile Computing',
+          'CS8602': 'Compiler Design',
+          'CS8603': 'Distributed Systems'
+        };
+        document.getElementById('subjectTitle').value = subjectTitles[subjectCodeFromUrl] || '';
+        document.getElementById('subjectTitle').readOnly = true;
+      } catch (e) {
+        facultyId = null;
+        window.location.href = '/index.html';
+      }
+    };
+
     function previewQuestionPaper() {
       const examName = document.getElementById('examName').value.trim();
       const department = document.getElementById('department').value.trim();
@@ -362,7 +412,10 @@
     }
 
     async function submitQuestionPaper() {
-      const facultyId = "<%= session.user.facultyId %>"; // Replace with actual session data
+      if (!facultyId) {
+        alert('Session expired or faculty ID not found. Please log in again.');
+        return;
+      }
       const examName = document.getElementById('examName').value.trim();
       const department = document.getElementById('department').value.trim();
       const semester = document.getElementById('semester').value.trim();
@@ -393,22 +446,25 @@
         maxMarks,
         partAQuestions,
         partBQuestions,
-        partCQuestions
+        partCQuestions,
+        role: (role || 'Paper Setter').trim()
       };
 
       try {
-        const response = await fetch('/api/submit-question-paper', {
+        const response = await fetch('/api/questionpaper', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           },
+          credentials: 'include',
           body: JSON.stringify(questionPaperData)
         });
 
         const result = await response.json();
         if (response.ok) {
           alert('Question paper submitted successfully!');
-          window.location.reload();
+          window.location.href = 'faculty_dashboard.html';
         } else {
           alert(`Error: ${result.message}`);
         }
@@ -445,43 +501,6 @@
         event.target.reset();
       } catch (err) {
         console.error('Error submitting question paper:', err);
-        alert('An error occurred while submitting the question paper.');
-      }
-    });
-
-    form.addEventListener('submit', async function(event) {
-      event.preventDefault();
-
-      if (!validateQuestionCount()) {
-        return;
-      }
-
-      const questionPaperData = {
-        semester: document.getElementById('semester').value,
-        subjectCode: document.getElementById('subjectCode').value,
-        regulation: document.getElementById('regulation').value,
-        partA: document.getElementById('partA').value.split('\n').filter(q => q.trim() !== ''),
-        partB: document.getElementById('partB').value.split('\n').filter(q => q.trim() !== ''),
-        partC: document.getElementById('partC').value.split('\n').filter(q => q.trim() !== '')
-      };
-
-      try {
-        const response = await fetch('/api/questionpaper', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(questionPaperData)
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to submit question paper');
-        }
-
-        alert('Question paper submitted successfully!');
-        form.reset();
-      } catch (error) {
-        console.error('Error submitting question paper:', error);
         alert('An error occurred while submitting the question paper.');
       }
     });

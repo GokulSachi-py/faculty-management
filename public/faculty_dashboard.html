@@ -207,6 +207,23 @@
           grid-template-columns: 1fr;
         }
       }
+      .set-question-paper-button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      .set-question-paper-button:hover {
+        background-color: #45a049;
+      }
+
+      .set-question-paper-button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
     </style>
   </head>
   <body>
@@ -247,6 +264,7 @@
                         <th>Subject Name</th>
                         <th>Regulation</th>
                         <th>Role</th>
+                        <th>Set Question Paper</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -443,12 +461,30 @@
 
               acceptedAssignments.forEach((assignment, index) => {
                 const row = document.createElement('tr');
+                const isQuestionPaperSubmitted = assignment.questionPaperStatus === 'submitted';
+                const isScrutinizer = assignment.role === 'Scrutinizer';
+                
+                console.log('Assignment status:', {
+                  subjectCode: assignment.subjectCode,
+                  questionPaperStatus: assignment.questionPaperStatus,
+                  isSubmitted: isQuestionPaperSubmitted,
+                  role: assignment.role
+                });
+
                 row.innerHTML = `
                   <td>${index + 1}</td>
                   <td>${assignment.subjectCode || 'N/A'}</td>
                   <td>${assignment.subjectName || 'N/A'}</td>
                   <td>${assignment.regulation || 'N/A'}</td>
                   <td>${assignment.role || 'N/A'}</td>
+                  <td>
+                    ${!isScrutinizer ? 
+                      (isQuestionPaperSubmitted ? 
+                        `<span style="color: #28a745; font-weight: 500;">Question Paper Submitted</span>` :
+                        `<button class="set-question-paper-button" onclick="redirectToSetQuestionPaper('${assignment.subjectCode}', '${assignment.role}')\">Set Question Paper</button>`) :
+                      `<span style="color: #6c757d;">Not Applicable</span>`
+                    }
+                  </td>
                 `;
                 tableBody.appendChild(row);
               });
@@ -546,9 +582,106 @@
           alert('An error occurred while checking access.');
         }
       }
-    </script>
 
-    <!-- Add a button to navigate to set_question_paper.html -->
-    <button class="set-question-paper-btn" onclick="checkAssignmentAccess()">Set Question Paper</button>
+      async function redirectToSetQuestionPaper(subjectCode, role) {
+        try {
+            const response = await fetch('/check-assignment-access', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to check assignment access');
+            }
+
+            const data = await response.json();
+            
+            if (data.accessGranted) {
+                window.location.href = `/set_question_paper.html?subjectCode=${subjectCode}&role=${encodeURIComponent(role)}`;
+            } else {
+                alert('You do not have permission to set question papers for this assignment.');
+            }
+        } catch (error) {
+            console.error('Error checking assignment access:', error);
+            alert('Error checking assignment access. Please try again.');
+        }
+      }
+
+      async function submitQuestionPaper() {
+        if (!facultyId) {
+          alert('Session expired or faculty ID not found. Please log in again.');
+          return;
+        }
+        const examName = document.getElementById('examName').value.trim();
+        const department = document.getElementById('department').value.trim();
+        const semester = document.getElementById('semester').value.trim();
+        const subjectCode = document.getElementById('subjectCode').value.trim();
+        const subjectTitle = document.getElementById('subjectTitle').value.trim();
+        const regulation = document.getElementById('regulation').value.trim();
+        const time = document.getElementById('time').value.trim();
+        const maxMarks = document.getElementById('maxMarks').value.trim();
+
+        const partAQuestions = Array.from(document.querySelectorAll('#partAQuestions .form-group input[type="text"]')).map(input => input.value.trim());
+        const partBQuestions = Array.from(document.querySelectorAll('#partBQuestions .form-group input[type="text"]')).map(input => input.value.trim());
+        const partCQuestions = Array.from(document.querySelectorAll('#partCQuestions .form-group input[type="text"]')).map(input => input.value.trim());
+
+        if (!examName || !department || !semester || !subjectCode || !subjectTitle || !regulation || !time || !maxMarks) {
+          alert('Please fill in all the fields before submitting.');
+          return;
+        }
+
+        const questionPaperData = {
+          facultyId,
+          examName,
+          department,
+          semester,
+          subjectCode,
+          subjectTitle,
+          regulation,
+          time,
+          maxMarks,
+          partAQuestions,
+          partBQuestions,
+          partCQuestions
+        };
+
+        try {
+          const response = await fetch('/api/questionpaper', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(questionPaperData)
+          });
+
+          const result = await response.json();
+          if (response.ok) {
+            alert('Question paper submitted successfully!');
+            // Immediately update the UI
+            const tableBody = document.querySelector('#assignmentTable tbody');
+            const rows = tableBody.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+              const cells = row.querySelectorAll('td');
+              if (cells[1].textContent === subjectCode) {
+                const statusCell = cells[5];
+                statusCell.innerHTML = '<span style="color: #28a745; font-weight: 500;">Question Paper Submitted</span>';
+              }
+            });
+            
+            // Also refresh the assignments list to ensure consistency
+            await fetchFacultyAssignments();
+          } else {
+            alert(`Error: ${result.message}`);
+          }
+        } catch (error) {
+          console.error('Error submitting question paper:', error);
+          alert('An error occurred while submitting the question paper.');
+        }
+      }
+    </script>
   </body>
 </html>
