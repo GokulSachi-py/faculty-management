@@ -10,7 +10,7 @@ const PORT = 3000;
 
 // Middlewares
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: true, // Allow all origins in development
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
@@ -21,10 +21,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(session({
     secret: 'your-secret-key',
-    resave: true,
+    resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false,
+        secure: false, // Set to true in production with HTTPS
         httpOnly: true,
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         sameSite: 'lax'
@@ -62,17 +62,9 @@ app.use((req, res, next) => {
 });
 
 // MongoDB Connection
-mongoose.connect('mongodb://localhost:27017/signupDB', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-});
-
-mongoose.connection.on('connected', () => {
-    console.log('Connected to MongoDB');
-});
-mongoose.connection.on('error', (err) => {
-    console.log('MongoDB connection error:', err);
-});
+mongoose.connect('mongodb://localhost:27017/signupDB')
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
 // Mongoose Schemas
 const userSchema = new mongoose.Schema({
@@ -116,7 +108,8 @@ const facultyAssignmentSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },
     assignedBy: String,
     year: Number,
-    questionPaperStatus: { type: String, enum: ['pending', 'submitted', 'approved', 'rejected'], default: 'pending' }
+    questionPaperStatus: { type: String, enum: ['pending', 'submitted', 'approved', 'rejected'], default: 'pending' },
+    deadlineDate: { type: Date }
 });
 
 // Mongoose Schema for QuestionPaper
@@ -133,7 +126,12 @@ const questionPaperSchema = new mongoose.Schema({
     partAQuestions: { type: [String], required: true },
     partBQuestions: { type: [String], required: true },
     partCQuestions: { type: [String], required: true },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    scrutinyStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+    scrutinyRemarks: { type: String, default: '' },
+    scrutinizerId: { type: String, default: '' },
+    scrutinizerName: { type: String, default: '' },
+    scrutinyRequestStatus: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' }
 });
 
 // Models
@@ -144,11 +142,11 @@ const QuestionPaper = mongoose.model('QuestionPaper', questionPaperSchema);
 
 app.post('/save-faculty-assignment', async (req, res) => {
     try {
-        const { facultyId, facultyName, subjectCode, subjectName, regulation, role } = req.body;
+        const { facultyId, facultyName, subjectCode, subjectName, regulation, role, deadlineDate } = req.body;
         
         console.log('Received save request:', req.body);
 
-        if (!facultyId || !facultyName || !subjectCode || !subjectName || !regulation || !role) {
+        if (!facultyId || !facultyName || !subjectCode || !subjectName || !regulation || !role || !deadlineDate) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
@@ -185,7 +183,8 @@ app.post('/save-faculty-assignment', async (req, res) => {
             isAssigned: false,
             response: '',
             year: new Date().getFullYear(),
-            assignedBy: req.session.user?.username || "ADMIN"
+            assignedBy: req.session.user?.username || "ADMIN",
+            deadlineDate: new Date(deadlineDate)
         });
 
         await newFacultyAssignment.save();
@@ -223,7 +222,8 @@ app.get('/api/faculty-assignments', async (req, res) => {
                 response: assignment.response || '',
                 isAssigned: assignment.isAssigned,
                 createdAt: assignment.createdAt,
-                questionPaperStatus: assignment.questionPaperStatus
+                questionPaperStatus: assignment.questionPaperStatus,
+                deadlineDate: assignment.deadlineDate
             });
         });
 
@@ -249,7 +249,6 @@ app.get('/get-faculty-assignment-status', async (req, res) => {
     try {
         console.log('Session check in get-faculty-assignment-status:', req.session);
         
-        // More lenient session check
         if (!req.session || !req.session.user) {
             console.log('No session or user found');
             return res.status(401).json({ message: "Please log in again" });
@@ -263,6 +262,29 @@ app.get('/get-faculty-assignment-status', async (req, res) => {
 
         console.log('Fetching assignments for facultyId:', facultyId);
 
+        // First check for any unresponded assignments
+        const unrespondedAssignment = await FacultyAssignment.findOne({ 
+            facultyId, 
+            response: '' 
+        });
+
+        if (unrespondedAssignment) {
+            console.log('Found unresponded assignment:', unrespondedAssignment);
+            return res.json({
+                prompt: true,
+                data: {
+                    subjectCode: unrespondedAssignment.subjectCode,
+                    subjectName: unrespondedAssignment.subjectName,
+                    regulation: unrespondedAssignment.regulation,
+                    role: unrespondedAssignment.role,
+                    response: unrespondedAssignment.response,
+                    isAssigned: unrespondedAssignment.isAssigned,
+                    questionPaperStatus: unrespondedAssignment.questionPaperStatus
+                }
+            });
+        }
+
+        // If no unresponded assignments, return all assignments
         const assignments = await FacultyAssignment.find({ facultyId })
             .sort({ createdAt: -1 });
 
@@ -671,6 +693,351 @@ app.post('/api/questionpaper', async (req, res) => {
     } catch (error) {
         console.error('Error saving question paper:', error);
         res.status(500).json({ message: 'Server error while saving question paper.' });
+    }
+});
+
+app.get('/api/questionpapers', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.role !== 'admin') {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const questionPapers = await QuestionPaper.find({})
+            .sort({ createdAt: -1 });
+        
+        res.json(questionPapers);
+    } catch (error) {
+        console.error('Error fetching question papers:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+app.get('/api/questionpaper/:id', async (req, res) => {
+    try {
+        if (!req.session.user) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const questionPaper = await QuestionPaper.findById(req.params.id);
+        if (!questionPaper) {
+            return res.status(404).json({ message: 'Question paper not found' });
+        }
+
+        // Allow access if user is admin or if they are the faculty who submitted the paper or the scrutinizer
+        if (req.session.user.role !== 'admin' && 
+            req.session.user.facultyId !== questionPaper.facultyId && 
+            req.session.user.facultyId !== questionPaper.scrutinizerId) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        // Format the response
+        const formattedPaper = {
+            _id: questionPaper._id,
+            subjectCode: questionPaper.subjectCode,
+            subjectTitle: questionPaper.subjectTitle,
+            department: questionPaper.department,
+            semester: questionPaper.semester,
+            regulation: questionPaper.regulation,
+            time: questionPaper.time,
+            maxMarks: questionPaper.maxMarks,
+            partAQuestions: questionPaper.partAQuestions,
+            partBQuestions: questionPaper.partBQuestions,
+            partCQuestions: questionPaper.partCQuestions,
+            scrutinyStatus: questionPaper.scrutinyStatus,
+            scrutinyRequestStatus: questionPaper.scrutinyRequestStatus,
+            scrutinyRemarks: questionPaper.scrutinyRemarks,
+            scrutinizerId: questionPaper.scrutinizerId,
+            scrutinizerName: questionPaper.scrutinizerName
+        };
+
+        res.json(formattedPaper);
+    } catch (error) {
+        console.error('Error fetching question paper:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+app.get('/api/questionpaper/:id/download', async (req, res) => {
+    try {
+        if (!req.session.user) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const questionPaper = await QuestionPaper.findById(req.params.id);
+        if (!questionPaper) {
+            return res.status(404).json({ message: 'Question paper not found' });
+        }
+
+        // Allow access if user is admin or if they are the faculty who submitted the paper or the scrutinizer
+        if (req.session.user.role !== 'admin' && 
+            req.session.user.facultyId !== questionPaper.facultyId && 
+            req.session.user.facultyId !== questionPaper.scrutinizerId) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        // Generate HTML content with proper formatting
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Question Paper - ${questionPaper.subjectCode}</title>
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        margin: 20px;
+                        line-height: 1.6;
+                    }
+                    .header { 
+                        text-align: center; 
+                        margin-bottom: 20px;
+                        border-bottom: 2px solid #333;
+                        padding-bottom: 20px;
+                    }
+                    .section { 
+                        margin-bottom: 20px;
+                        page-break-inside: avoid;
+                    }
+                    .question { 
+                        margin-bottom: 10px;
+                        padding-left: 20px;
+                    }
+                    .part-title {
+                        font-weight: bold;
+                        margin-bottom: 10px;
+                        color: #333;
+                    }
+                    @media print {
+                        body {
+                            margin: 0;
+                            padding: 20px;
+                        }
+                        .header {
+                            border-bottom: 2px solid #000;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>${questionPaper.examName}</h1>
+                    <p><strong>Department:</strong> ${questionPaper.department}</p>
+                    <p><strong>Semester:</strong> ${questionPaper.semester}</p>
+                    <p><strong>Subject Code:</strong> ${questionPaper.subjectCode}</p>
+                    <p><strong>Subject Title:</strong> ${questionPaper.subjectTitle}</p>
+                    <p><strong>Regulation:</strong> ${questionPaper.regulation}</p>
+                    <p><strong>Time:</strong> ${questionPaper.time}</p>
+                    <p><strong>Maximum Marks:</strong> ${questionPaper.maxMarks}</p>
+                </div>
+
+                <div class="section">
+                    <div class="part-title">Part A (10 x 2 = 20 Marks)</div>
+                    ${questionPaper.partAQuestions.map((q, i) => `
+                        <div class="question">${i + 1}. ${q}</div>
+                    `).join('')}
+                </div>
+
+                <div class="section">
+                    <div class="part-title">Part B (8 x 8 = 64 Marks)</div>
+                    ${questionPaper.partBQuestions.map((q, i) => `
+                        <div class="question">${i + 11}. ${q}</div>
+                    `).join('')}
+                </div>
+
+                <div class="section">
+                    <div class="part-title">Part C (2 x 8 = 16 Marks)</div>
+                    ${questionPaper.partCQuestions.map((q, i) => `
+                        <div class="question">${i + 23}. ${q}</div>
+                    `).join('')}
+                </div>
+            </body>
+            </html>
+        `;
+
+        // Set headers for file download
+        res.setHeader('Content-Type', 'text/html');
+        res.setHeader('Content-Disposition', `attachment; filename=question_paper_${questionPaper.subjectCode}.html`);
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        
+        // Send the content
+        res.send(htmlContent);
+    } catch (error) {
+        console.error('Error downloading question paper:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+app.post('/api/assign-scrutinizer', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.role !== 'admin') {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const { questionPaperId, scrutinizerId, scrutinizerName } = req.body;
+
+        if (!questionPaperId || !scrutinizerId || !scrutinizerName) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        const questionPaper = await QuestionPaper.findById(questionPaperId);
+        if (!questionPaper) {
+            return res.status(404).json({ message: 'Question paper not found' });
+        }
+
+        if (questionPaper.scrutinyStatus !== 'pending') {
+            return res.status(400).json({ message: 'Question paper has already been scrutinized' });
+        }
+
+        // Update the question paper with scrutinizer details and set request status to pending
+        questionPaper.scrutinizerId = scrutinizerId;
+        questionPaper.scrutinizerName = scrutinizerName;
+        questionPaper.scrutinyRequestStatus = 'pending';
+        await questionPaper.save();
+
+        res.json({ message: 'Scrutinizer assigned successfully' });
+    } catch (error) {
+        console.error('Error assigning scrutinizer:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+app.post('/api/submit-scrutiny', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.role !== 'faculty') {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const { questionPaperId, remarks, status } = req.body;
+
+        if (!questionPaperId || !remarks || !status) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        const questionPaper = await QuestionPaper.findById(questionPaperId);
+        if (!questionPaper) {
+            return res.status(404).json({ message: 'Question paper not found' });
+        }
+
+        if (questionPaper.scrutinizerId !== req.session.user.facultyId) {
+            return res.status(403).json({ message: 'You are not assigned as scrutinizer for this paper' });
+        }
+
+        if (questionPaper.scrutinyStatus !== 'pending') {
+            return res.status(400).json({ message: 'Question paper has already been scrutinized' });
+        }
+
+        questionPaper.scrutinyStatus = status;
+        questionPaper.scrutinyRemarks = remarks;
+        await questionPaper.save();
+
+        res.json({ message: 'Scrutiny submitted successfully' });
+    } catch (error) {
+        console.error('Error submitting scrutiny:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+app.get('/api/scrutiny-papers', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.role !== 'faculty') {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const scrutinizerId = req.session.user.facultyId;
+        const questionPapers = await QuestionPaper.find({
+            scrutinizerId,
+            scrutinyRequestStatus: 'accepted',
+            scrutinyStatus: 'pending'
+        }).sort({ createdAt: -1 });
+
+        // Format the response
+        const formattedPapers = questionPapers.map(paper => ({
+            _id: paper._id,
+            subjectCode: paper.subjectCode,
+            subjectTitle: paper.subjectTitle,
+            department: paper.department,
+            semester: paper.semester,
+            regulation: paper.regulation,
+            time: paper.time,
+            maxMarks: paper.maxMarks,
+            scrutinyStatus: paper.scrutinyStatus,
+            scrutinyRequestStatus: paper.scrutinyRequestStatus,
+            scrutinyRemarks: paper.scrutinyRemarks,
+            scrutinizerId: paper.scrutinizerId,
+            scrutinizerName: paper.scrutinizerName
+        }));
+
+        res.json(formattedPapers);
+    } catch (error) {
+        console.error('Error fetching scrutiny papers:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Update the pending scrutiny requests endpoint
+app.get('/api/pending-scrutiny-requests', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.role !== 'faculty') {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const scrutinizerId = req.session.user.facultyId;
+        const questionPapers = await QuestionPaper.find({
+            scrutinizerId,
+            scrutinyRequestStatus: 'pending'
+        }).sort({ createdAt: -1 });
+
+        // Format the response to include necessary details
+        const formattedPapers = questionPapers.map(paper => ({
+            _id: paper._id,
+            subjectCode: paper.subjectCode,
+            subjectTitle: paper.subjectTitle,
+            department: paper.department,
+            semester: paper.semester,
+            regulation: paper.regulation,
+            time: paper.time,
+            maxMarks: paper.maxMarks,
+            scrutinyStatus: paper.scrutinyStatus,
+            scrutinyRequestStatus: paper.scrutinyRequestStatus
+        }));
+
+        res.json(formattedPapers);
+    } catch (error) {
+        console.error('Error fetching pending scrutiny requests:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Add new endpoint for faculty to respond to scrutiny request
+app.post('/api/respond-to-scrutiny-request', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.role !== 'faculty') {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const { questionPaperId, response } = req.body;
+
+        if (!questionPaperId || !response) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        const questionPaper = await QuestionPaper.findById(questionPaperId);
+        if (!questionPaper) {
+            return res.status(404).json({ message: 'Question paper not found' });
+        }
+
+        if (questionPaper.scrutinizerId !== req.session.user.facultyId) {
+            return res.status(403).json({ message: 'You are not assigned as scrutinizer for this paper' });
+        }
+
+        questionPaper.scrutinyRequestStatus = response;
+        await questionPaper.save();
+
+        res.json({ message: 'Response recorded successfully' });
+    } catch (error) {
+        console.error('Error responding to scrutiny request:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 });
 

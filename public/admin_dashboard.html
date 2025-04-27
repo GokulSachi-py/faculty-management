@@ -258,6 +258,50 @@
         background-color: #cccccc;
         cursor: not-allowed;
       }
+
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+      }
+
+      .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 50%;
+        border-radius: 8px;
+        position: relative;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+      }
+
+      .close-btn:hover {
+        color: #000;
+      }
+
+      .modal-body {
+        padding: 10px 0;
+      }
     </style>
   </head>
 
@@ -270,6 +314,13 @@
             href="#question-paper-assigner-content"
             onclick="showSection('question-paper-assigner-content', this)"
             >Question Paper Assigner</a
+          >
+        </li>
+        <li>
+          <a
+            href="#question-papers-content"
+            onclick="showSection('question-papers-content', this)"
+            >Question Papers</a
           >
         </li>
         <li>
@@ -308,6 +359,7 @@
                 <th>Subject</th>
                 <th>Regulation</th>
                 <th>Role</th>
+                <th>Deadline Date</th>
                 <th>Actions</th>
                 <th>Response</th>
                 <th>Question Paper Status</th>
@@ -318,6 +370,27 @@
           <button id="add-faculty-button" onclick="addRow()">
             Add New Faculty
           </button>
+        </div>
+
+        <div
+          id="question-papers-content"
+          class="feature-card hidden-section"
+          style="margin-left: 30px"
+        >
+          <h3>Submitted Question Papers</h3>
+          <table class="question-paper-table">
+            <thead>
+              <tr>
+                <th>Serial No</th>
+                <th>Subject Code</th>
+                <th>Subject Title</th>
+                <th>Faculty ID</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="question-papers-body"></tbody>
+          </table>
         </div>
 
         <div
@@ -414,11 +487,12 @@
             </td>
             <td>
                 <div class="input-container">
-                    <select class="input-field" onchange="enableSaveButton(this.closest('tr'))" required>
-                        <option value="">Select Role</option>
-                        <option value="Paper Setter">Paper Setter</option>
-                        <option value="Scrutinizer">Scrutinizer</option>
-                    </select>
+                    <input type="text" class="input-field" value="Paper Setter" readonly>
+                </div>
+            </td>
+            <td>
+                <div class="input-container">
+                    <input type="date" class="input-field" onchange="enableSaveButton(this.closest('tr'))" required>
                 </div>
             </td>
             <td>
@@ -426,7 +500,6 @@
                 <button class="cancel-button" onclick="cancelRow(this.closest('tr'))">Cancel</button>
             </td>
             <td>Pending</td>
-            <td>Yet to submit</td>
         `;
         updateRowNumbers();
       }
@@ -521,6 +594,7 @@
                         <td>${assignment.subjectCode} - ${assignment.subjectName || 'N/A'}</td>
                         <td>${assignment.regulation || 'N/A'}</td>
                         <td>${assignment.role || 'N/A'}</td>
+                        <td>${assignment.deadlineDate ? new Date(assignment.deadlineDate).toISOString().split('T')[0] : 'N/A'}</td>
                         <td>
                             <button class="remove-button" onclick="removeFaculty('${assignment.facultyId}', '${assignment.subjectCode}', '${assignment.role}', this)">Remove</button>
                         </td>
@@ -560,6 +634,7 @@
       // Initialize the page
       window.onload = async function() {
         await fetchAllFacultyAssignments();
+        await loadQuestionPapers();
         startPeriodicRefresh();
       };
 
@@ -612,7 +687,8 @@
                 subjectCode: selectedSubject,
                 subjectName: subjects[selectedSubject],
                 regulation: row.querySelectorAll('select')[1].value.trim(),
-                role: row.querySelectorAll('select')[2].value.trim()
+                role: row.querySelector('input[value="Paper Setter"]').value,
+                deadlineDate: row.querySelector('input[type="date"]').value
             };
 
             const response = await fetch("/save-faculty-assignment", {
@@ -641,25 +717,253 @@
         }
       }
 
-      async function loadResponses() {
-        const res = await fetch("/question-assigner-responses");
-        const data = await res.json();
-        const tbody = document.querySelector(".question-paper-table tbody");
-        tbody.innerHTML = "";
-        data.forEach((row) => {
-          tbody.innerHTML += `<tr>
-            <td>${row.facultyId}</td>
-            <td>${row.subject}</td>
-            <td>${row.response || "Pending"}</td>
-            <td><button class="remove-button" onclick="removeFaculty('${
-              row.facultyId
-            }', this)">Remove</button></td>
-        </tr>`;
-        });
+      async function loadQuestionPapers() {
+        try {
+            const response = await fetch('/api/questionpapers', {
+                credentials: 'include'
+            });
 
-        window.onload = function () {
-          checkPrompt();
-        };
+            if (response.status === 401) {
+                // Session expired or not authenticated
+                window.location.href = '/index.html';
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch question papers');
+            }
+
+            const papers = await response.json();
+            const tbody = document.getElementById('question-papers-body');
+            tbody.innerHTML = '';
+
+            if (papers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No question papers submitted yet</td></tr>';
+                return;
+            }
+
+            papers.forEach((paper, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${paper.subjectCode}</td>
+                    <td>${paper.subjectTitle}</td>
+                    <td>${paper.facultyId}</td>
+                    <td>${paper.scrutinyStatus}</td>
+                    <td>
+                        <button onclick="downloadPaper('${paper._id}')">Download</button>
+                        ${paper.scrutinyStatus === 'pending' ? 
+                            `<button onclick="showAssignScrutinizerModal('${paper._id}')">Assign Scrutinizer</button>` : 
+                            `<button onclick="viewScrutiny('${paper._id}')">View Scrutiny</button>`
+                        }
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        } catch (error) {
+            console.error('Error loading question papers:', error);
+            alert('Failed to load question papers. Please try again.');
+        }
+      }
+
+      function showAssignScrutinizerModal(paperId) {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        `;
+
+        modal.innerHTML = `
+            <div style="background: white; padding: 20px; border-radius: 8px; width: 400px;">
+                <h3>Assign Scrutinizer</h3>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Scrutinizer ID:</label>
+                    <input type="text" id="scrutinizerId" class="input-field" required>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Scrutinizer Name:</label>
+                    <input type="text" id="scrutinizerName" class="input-field" required>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button class="cancel-button" onclick="this.closest('div[style*="position: fixed"]').remove()">Cancel</button>
+                    <button class="save-button" onclick="assignScrutinizer('${paperId}')">Assign</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+      }
+
+      async function assignScrutinizer(paperId) {
+        const scrutinizerId = document.getElementById('scrutinizerId').value.trim();
+        const scrutinizerName = document.getElementById('scrutinizerName').value.trim();
+
+        if (!scrutinizerId || !scrutinizerName) {
+            alert('Please fill in all fields');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/assign-scrutinizer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    questionPaperId: paperId,
+                    scrutinizerId,
+                    scrutinizerName
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to assign scrutinizer');
+            }
+
+            alert('Scrutinizer assigned successfully!');
+            document.querySelector('div[style*="position: fixed"]').remove();
+            loadQuestionPapers();
+        } catch (error) {
+            console.error('Error assigning scrutinizer:', error);
+            alert('Failed to assign scrutinizer. Please try again.');
+        }
+      }
+
+      async function viewScrutiny(paperId) {
+        try {
+            const response = await fetch(`/api/questionpaper/${paperId}`, {
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch scrutiny details');
+            }
+
+            const paper = await response.json();
+            
+            // Create modal container
+            const modal = document.createElement('div');
+            modal.id = 'scrutiny-modal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            `;
+
+            // Create modal content
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                width: 600px;
+                max-height: 80vh;
+                overflow-y: auto;
+                position: relative;
+            `;
+
+            // Create exit button
+            const exitButton = document.createElement('button');
+            exitButton.textContent = 'Exit';
+            exitButton.style.cssText = `
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background-color: #dc3545;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: bold;
+            `;
+            exitButton.onclick = function() {
+                modal.remove();
+            };
+
+            // Add content to modal
+            modalContent.innerHTML = `
+                <h3 style="margin-right: 30px;">Scrutiny Details</h3>
+                <div style="margin-bottom: 15px;">
+                    <p><strong>Scrutinizer:</strong> ${paper.scrutinizerName} (${paper.scrutinizerId})</p>
+                    <p><strong>Status:</strong> ${paper.scrutinyStatus}</p>
+                    <p><strong>Remarks:</strong></p>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 4px;">
+                        ${paper.scrutinyRemarks}
+                    </div>
+                </div>
+            `;
+
+            // Assemble modal
+            modalContent.appendChild(exitButton);
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+
+        } catch (error) {
+            console.error('Error viewing scrutiny:', error);
+            alert('Failed to load scrutiny details. Please try again.');
+        }
+      }
+
+      async function downloadPaper(paperId) {
+        try {
+            const response = await fetch(`/api/questionpaper/${paperId}/download`, {
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to download paper');
+            }
+
+            // Get the content type from the response
+            const contentType = response.headers.get('content-type');
+            
+            // Create a blob from the response
+            const blob = await response.blob();
+            
+            // Create a URL for the blob
+            const url = window.URL.createObjectURL(blob);
+            
+            // Create a temporary link element
+            const a = document.createElement('a');
+            a.href = url;
+            
+            // Set the filename based on content type
+            if (contentType.includes('pdf')) {
+                a.download = `question_paper_${paperId}.pdf`;
+            } else if (contentType.includes('html')) {
+                a.download = `question_paper_${paperId}.html`;
+            } else {
+                a.download = `question_paper_${paperId}`;
+            }
+            
+            // Append to body, click, and remove
+            document.body.appendChild(a);
+            a.click();
+            
+            // Cleanup
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('Error downloading paper:', error);
+            alert('Failed to download paper. Please try again.');
+        }
       }
 
       async function logout() {
@@ -707,7 +1011,36 @@
         }
       }
 
-      console.log("Assignments received from backend:", data);
+      function showScrutinyDetails(paperId) {
+        const paper = questionPapers.find(p => p._id === paperId);
+        if (!paper) return;
+
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Scrutiny Details</h2>
+                    <button class="close-btn" onclick="closeScrutinyModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Scrutinizer:</strong> ${paper.scrutinizerName || 'Not assigned'}</p>
+                    <p><strong>Status:</strong> ${paper.scrutinyStatus || 'Pending'}</p>
+                    <p><strong>Remarks:</strong> ${paper.scrutinyRemarks || 'No remarks'}</p>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        modal.style.display = 'block';
+      }
+
+      function closeScrutinyModal() {
+        const modal = document.querySelector('.modal');
+        if (modal) {
+            modal.remove();
+        }
+      }
     </script>
   </body>
 </html>
