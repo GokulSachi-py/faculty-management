@@ -120,6 +120,20 @@
         .retry-btn:hover {
             background-color: #0056b3;
         }
+
+        .preview-btn {
+            background-color: #6c757d;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .preview-btn:hover {
+            background-color: #5a6268;
+        }
     </style>
 </head>
 <body>
@@ -203,7 +217,7 @@
                             <div class="paper-header">
                                 <h2>${paper.subjectCode} - ${paper.subjectTitle}</h2>
                                 <div>
-                                    <button onclick="downloadPaper('${paper._id}')">Download PDF</button>
+                                    <button onclick="previewPaper('${paper._id}')" class="preview-btn">Preview PDF</button>
                                     <button onclick="closeScrutinyDetails('${paper._id}')" class="close-btn">Close</button>
                                 </div>
                             </div>
@@ -256,7 +270,7 @@
                             <div class="paper-header">
                                 <h2>${paper.subjectCode} - ${paper.subjectTitle}</h2>
                                 <div>
-                                    <button onclick="downloadPaper('${paper._id}')">Download PDF</button>
+                                    <button onclick="previewPaper('${paper._id}')" class="preview-btn">Preview PDF</button>
                                     <button onclick="closeScrutinyDetails('${paper._id}')" class="close-btn">Close</button>
                                 </div>
                             </div>
@@ -293,7 +307,7 @@
             }
         }
 
-        async function downloadPaper(paperId) {
+        async function previewPaper(paperId) {
             try {
                 const sessionValid = await checkSession();
                 if (!sessionValid) return;
@@ -307,15 +321,11 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Failed to download paper: ${response.statusText}`);
+                    throw new Error(`Failed to preview paper: ${response.statusText}`);
                 }
 
-                // Get the content type and filename from headers
+                // Get the content type from headers
                 const contentType = response.headers.get('content-type');
-                const contentDisposition = response.headers.get('content-disposition');
-                const filename = contentDisposition 
-                    ? contentDisposition.split('filename=')[1].replace(/"/g, '')
-                    : `question_paper_${paperId}.html`;
 
                 // Create a blob from the response
                 const blob = await response.blob();
@@ -323,24 +333,17 @@
                 // Create a URL for the blob
                 const url = window.URL.createObjectURL(blob);
                 
-                // Create a temporary link element
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = filename;
+                // Open the PDF in a new tab
+                window.open(url, '_blank');
                 
-                // Append the link to the document
-                document.body.appendChild(link);
-                
-                // Trigger the download
-                link.click();
-                
-                // Clean up
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(link);
+                // Clean up the URL after a delay to ensure the new tab has loaded
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                }, 1000);
                 
             } catch (error) {
-                console.error('Error downloading paper:', error);
-                alert('Failed to download the question paper. Please try again.');
+                console.error('Error previewing paper:', error);
+                alert('Failed to preview the question paper. Please try again.');
             }
         }
 

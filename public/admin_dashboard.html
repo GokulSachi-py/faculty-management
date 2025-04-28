@@ -145,6 +145,59 @@
         top: 0;
       }
 
+      .download-btn {
+        background-color: #28a745;
+        color: white;
+      }
+
+      .download-btn:hover {
+        background-color: #218838;
+      }
+
+      .assign-scrutinizer-btn {
+        background-color: #007bff;
+        color: white;
+      }
+
+      .assign-scrutinizer-btn:hover {
+        background-color: #0056b3;
+      }
+
+      .view-scrutiny-btn {
+        background-color: #17a2b8;
+        color: white;
+      }
+
+      .view-scrutiny-btn:hover {
+        background-color: #138496;
+      }
+
+      .download-btn,
+      .assign-scrutinizer-btn,
+      .view-scrutiny-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        display: inline-block;
+        white-space: nowrap;
+        min-width: 120px;
+        text-align: center;
+        margin: 0;
+      }
+
+      .action-buttons-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        justify-content: center;
+        align-items: center;
+        padding: 8px;
+        min-height: 120px;
+        box-sizing: border-box;
+      }
+
       #add-faculty-button {
         margin-top: 15px;
         background-color: #0f83ff;
@@ -220,6 +273,25 @@
 
       .remove-button:hover {
         background-color: darkred;
+      }
+
+      .pay-button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      .pay-button:hover {
+        background-color: #45a049;
+      }
+
+      .pay-button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
       }
 
       #faculty-table-body {
@@ -302,6 +374,17 @@
       .modal-body {
         padding: 10px 0;
       }
+
+      .question-paper-table td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+        word-wrap: break-word;
+        min-width: 100px;
+        vertical-align: middle;
+        max-width: 200px;
+        overflow: hidden;
+      }
     </style>
   </head>
 
@@ -321,6 +404,13 @@
             href="#question-papers-content"
             onclick="showSection('question-papers-content', this)"
             >Question Papers</a
+          >
+        </li>
+        <li>
+          <a
+            href="#payments-content"
+            onclick="showSection('payments-content', this)"
+            >Payments</a
           >
         </li>
         <li>
@@ -394,6 +484,45 @@
         </div>
 
         <div
+          id="payments-content"
+          class="feature-card hidden-section"
+          style="margin-left: 30px"
+        >
+          <h3>Payments</h3>
+          <p>Manage payments for paper setters and scrutiny checkers.</p>
+          
+          <h4>Paper Setters</h4>
+          <table class="question-paper-table">
+            <thead>
+              <tr>
+                <th>Serial No</th>
+                <th>Faculty ID</th>
+                <th>Faculty Name</th>
+                <th>Subject</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="paper-setters-payment-body"></tbody>
+          </table>
+          
+          <h4 style="margin-top: 30px;">Scrutiny Checkers</h4>
+          <table class="question-paper-table">
+            <thead>
+              <tr>
+                <th>Serial No</th>
+                <th>Faculty ID</th>
+                <th>Faculty Name</th>
+                <th>Subject</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="scrutiny-checkers-payment-body"></tbody>
+          </table>
+        </div>
+
+        <div
           id="admin-info-content"
           class="admin-info-card hidden-section"
           style="margin-left: 30px"
@@ -434,6 +563,11 @@
           .querySelectorAll(".sidebar a")
           .forEach((link) => link.classList.remove("active"));
         clickedLink.classList.add("active");
+        
+        // Load payment data when payments section is shown
+        if (sectionId === 'payments-content') {
+          loadPaymentData();
+        }
       }
 
       function enableSaveButton(row) {
@@ -751,18 +885,148 @@
                     <td>${paper.facultyId}</td>
                     <td>${paper.scrutinyStatus}</td>
                     <td>
-                        <button onclick="downloadPaper('${paper._id}')">Download</button>
-                        ${paper.scrutinyStatus === 'pending' ? 
-                            `<button onclick="showAssignScrutinizerModal('${paper._id}')">Assign Scrutinizer</button>` : 
-                            `<button onclick="viewScrutiny('${paper._id}')">View Scrutiny</button>`
-                        }
+                        <div class="action-buttons-container">
+                            <button onclick="downloadPaper('${paper._id}')" class="download-btn">Download</button>
+                            ${paper.scrutinyStatus === 'pending' ? 
+                                `<button onclick="showAssignScrutinizerModal('${paper._id}')" class="assign-scrutinizer-btn">Assign Scrutinizer</button>` : 
+                                `<button onclick="viewScrutiny('${paper._id}')" class="view-scrutiny-btn">View Scrutiny</button>`
+                            }
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(row);
             });
+            
+            // Load payment data
+            loadPaymentData();
         } catch (error) {
             console.error('Error loading question papers:', error);
             alert('Failed to load question papers. Please try again.');
+        }
+      }
+      
+      // Function to load payment data for paper setters and scrutiny checkers
+      async function loadPaymentData() {
+        try {
+            // Load paper setters data
+            const paperSettersBody = document.getElementById('paper-setters-payment-body');
+            paperSettersBody.innerHTML = '';
+            
+            // Load scrutiny checkers data
+            const scrutinyCheckersBody = document.getElementById('scrutiny-checkers-payment-body');
+            scrutinyCheckersBody.innerHTML = '';
+            
+            // Fetch faculty assignments to get paper setters
+            const assignmentsResponse = await fetch('/api/faculty-assignments', {
+                credentials: 'include'
+            });
+            
+            if (!assignmentsResponse.ok) {
+                throw new Error('Failed to fetch faculty assignments');
+            }
+            
+            const assignments = await assignmentsResponse.json();
+            
+            // Filter paper setters (role is 'Paper Setter' and questionPaperStatus is 'submitted')
+            const paperSetters = assignments.filter(assignment => 
+                assignment.role === 'Paper Setter' && 
+                assignment.questionPaperStatus === 'submitted'
+            );
+            
+            // Display paper setters
+            if (paperSetters.length === 0) {
+                paperSettersBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No paper setters found</td></tr>';
+            } else {
+                paperSetters.forEach((setter, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${setter.facultyId || 'N/A'}</td>
+                        <td>${setter.facultyName || 'N/A'}</td>
+                        <td>${setter.subjectCode} - ${setter.subjectName || 'N/A'}</td>
+                        <td>Pending Payment</td>
+                        <td>
+                            <button class="pay-button" onclick="processPayment('${setter.facultyId}', '${setter.subjectCode}', 'paper_setter')">Pay</button>
+                        </td>
+                    `;
+                    paperSettersBody.appendChild(row);
+                });
+            }
+            
+            // Fetch question papers to get scrutiny checkers
+            const papersResponse = await fetch('/api/questionpapers', {
+                credentials: 'include'
+            });
+            
+            if (!papersResponse.ok) {
+                throw new Error('Failed to fetch question papers');
+            }
+            
+            const papers = await papersResponse.json();
+            
+            // Filter scrutiny checkers (papers with scrutinyStatus as 'approved' or 'rejected')
+            const scrutinyCheckers = papers.filter(paper => 
+                paper.scrutinyStatus === 'approved' || paper.scrutinyStatus === 'rejected'
+            );
+            
+            // Display scrutiny checkers
+            if (scrutinyCheckers.length === 0) {
+                scrutinyCheckersBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No scrutiny checkers found</td></tr>';
+            } else {
+                scrutinyCheckers.forEach((checker, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${checker.scrutinizerId || 'N/A'}</td>
+                        <td>${checker.scrutinizerName || 'N/A'}</td>
+                        <td>${checker.subjectCode} - ${checker.subjectTitle || 'N/A'}</td>
+                        <td>Pending Payment</td>
+                        <td>
+                            <button class="pay-button" onclick="processPayment('${checker.scrutinizerId}', '${checker.subjectCode}', 'scrutiny_checker')">Pay</button>
+                        </td>
+                    `;
+                    scrutinyCheckersBody.appendChild(row);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading payment data:', error);
+            alert('Failed to load payment data. Please try again.');
+        }
+      }
+      
+      // Function to process payment
+      function processPayment(facultyId, subjectCode, type) {
+        if (!facultyId || !subjectCode || !type) {
+            alert('Missing information for payment processing');
+            return;
+        }
+        
+        const facultyType = type === 'paper_setter' ? 'Paper Setter' : 'Scrutiny Checker';
+        
+        if (confirm(`Are you sure you want to process payment for ${facultyType} (ID: ${facultyId}) for subject ${subjectCode}?`)) {
+            alert('Payment is being processed...');
+            
+            // In a real application, you would make an API call to process the payment
+            // For now, we'll just simulate the payment process
+            
+            setTimeout(() => {
+                alert(`Payment processed successfully for ${facultyType} (ID: ${facultyId}) for subject ${subjectCode}`);
+                
+                // Update the status in the table
+                const tableBody = type === 'paper_setter' ? 
+                    document.getElementById('paper-setters-payment-body') : 
+                    document.getElementById('scrutiny-checkers-payment-body');
+                
+                const rows = tableBody.getElementsByTagName('tr');
+                for (let i = 0; i < rows.length; i++) {
+                    const cells = rows[i].getElementsByTagName('td');
+                    if (cells[1].textContent === facultyId && cells[3].textContent.includes(subjectCode)) {
+                        cells[4].textContent = 'Paid';
+                        cells[5].innerHTML = '<span style="color: green;">Paid</span>';
+                        break;
+                    }
+                }
+            }, 1500);
         }
       }
 
