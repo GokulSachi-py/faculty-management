@@ -347,12 +347,21 @@
         async function submitScrutiny(paperId, status) {
             try {
                 const sessionValid = await checkSession();
-                if (!sessionValid) return;
+                if (!sessionValid) {
+                    alert('Session expired. Please log in again.');
+                    window.location.href = '/index.html';
+                    return;
+                }
 
                 const remarks = document.getElementById(`remarks-${paperId}`).value.trim();
 
                 if (!remarks) {
                     alert('Please enter your remarks before submitting.');
+                    return;
+                }
+
+                if (!['approved', 'rejected'].includes(status)) {
+                    alert('Invalid status value. Please try again.');
                     return;
                 }
 
@@ -370,19 +379,31 @@
                 });
 
                 if (response.status === 401) {
+                    alert('Session expired. Please log in again.');
                     window.location.href = '/index.html';
                     return;
                 }
 
+                if (response.status === 403) {
+                    alert('You are not authorized to scrutinize this paper.');
+                    return;
+                }
+
+                if (response.status === 404) {
+                    alert('Question paper not found.');
+                    return;
+                }
+
                 if (!response.ok) {
-                    throw new Error('Failed to submit scrutiny');
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to submit scrutiny');
                 }
 
                 alert('Scrutiny submitted successfully!');
                 loadPapers(); // Reload the papers list
             } catch (error) {
                 console.error('Error submitting scrutiny:', error);
-                alert('Failed to submit scrutiny. Please try again.');
+                alert(`Failed to submit scrutiny: ${error.message}`);
             }
         }
 

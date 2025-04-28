@@ -4,13 +4,57 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const path = require('path');
+const nodemailer = require('nodemailer');
+const config = require('./config');
+require('dotenv').config();
+
+// Check if email credentials are set
+const emailUser = process.env.EMAIL_USER || config.email?.user;
+const emailPass = process.env.EMAIL_PASS || config.email?.pass;
+
+if (!emailUser || !emailPass) {
+    console.error('Email credentials not found in environment variables or config');
+    console.log('Please create a .env file with EMAIL_USER and EMAIL_PASS or set them in config.js');
+}
+
+// Nodemailer configuration
+const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // true for 465, false for other ports
+    auth: {
+        user: emailUser,
+        pass: emailPass
+    },
+    tls: {
+        rejectUnauthorized: false
+    }
+});
+
+// Verify email configuration
+transporter.verify(function(error, success) {
+    if (error) {
+        console.error('Email configuration error:', error);
+        console.log('Please check your config.js file and ensure email credentials are set correctly');
+    } else {
+        console.log('Email server is ready to send messages');
+    }
+});
+
+// Function to generate OTP
+function generateOTP() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Store OTPs temporarily (in production, use Redis or similar)
+const otpStore = new Map();
 
 const app = express();
 const PORT = 3000;
 
 // Middlewares
 app.use(cors({
-    origin: true, // Allow all origins in development
+    origin: 'http://localhost:3000', // Specify your frontend origin
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
@@ -131,7 +175,11 @@ const questionPaperSchema = new mongoose.Schema({
     scrutinyRemarks: { type: String, default: '' },
     scrutinizerId: { type: String, default: '' },
     scrutinizerName: { type: String, default: '' },
-    scrutinyRequestStatus: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' }
+    scrutinyRequestStatus: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' },
+    submissionDeadline: { type: Date },
+    scrutinyDeadline: { type: Date },
+    submissionNotificationSent: { type: Boolean, default: false },
+    scrutinyNotificationSent: { type: Boolean, default: false }
 });
 
 // Models
@@ -515,23 +563,26 @@ app.post('/faculty_login', async (req, res) => {
         // Set session
         req.session.user = userData;
 
-        // Save session explicitly
-        req.session.save((err) => {
-            if (err) {
-                console.error('Session save error:', err);
-                return res.status(500).json({ message: "Error saving session." });
-            }
-
-            console.log('Session saved successfully:', {
-                sessionID: req.sessionID,
-                userData: userData
+        // Save session and wait for it to complete
+        await new Promise((resolve, reject) => {
+            req.session.save((err) => {
+                if (err) {
+                    console.error('Session save error:', err);
+                    reject(err);
+                } else {
+                    console.log('Session saved successfully:', {
+                        sessionID: req.sessionID,
+                        userData: userData
+                    });
+                    resolve();
+                }
             });
+        });
 
-            // Send success response with user data
-            res.status(200).json({
-                message: "Login successful!",
-                user: userData
-            });
+        // Send success response with user data
+        res.status(200).json({
+            message: "Login successful!",
+            user: userData
         });
 
     } catch (error) {
@@ -649,6 +700,24 @@ app.post('/api/questionpaper', async (req, res) => {
             return res.status(400).json({ message: 'All fields are required.' });
         }
 
+        // Get the corresponding assignment to get the deadline
+        const assignment = await FacultyAssignment.findOne({
+            facultyId,
+            subjectCode,
+            role: { $regex: new RegExp(`^${role}$`, 'i') }
+        });
+
+        if (!assignment) {
+            return res.status(404).json({ message: 'No assignment found for this subject and role.' });
+        }
+
+        // Ensure deadlineDate is a valid Date object
+        const deadlineDate = new Date(assignment.deadlineDate);
+        if (isNaN(deadlineDate.getTime())) {
+            console.error('Invalid deadline date:', assignment.deadlineDate);
+            return res.status(400).json({ message: 'Invalid deadline date in assignment.' });
+        }
+
         // Create a new question paper document
         const newQuestionPaper = new QuestionPaper({
             facultyId,
@@ -663,7 +732,8 @@ app.post('/api/questionpaper', async (req, res) => {
             partAQuestions,
             partBQuestions,
             partCQuestions,
-            role
+            role,
+            submissionDeadline: deadlineDate
         });
 
         // Save the question paper to the database
@@ -870,35 +940,28 @@ app.get('/api/questionpaper/:id/download', async (req, res) => {
 
 app.post('/api/assign-scrutinizer', async (req, res) => {
     try {
+        const { questionPaperId, scrutinizerId, scrutinizerName, scrutinyDeadline } = req.body;
+        
         if (!req.session.user || req.session.user.role !== 'admin') {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
-
-        const { questionPaperId, scrutinizerId, scrutinizerName } = req.body;
-
-        if (!questionPaperId || !scrutinizerId || !scrutinizerName) {
-            return res.status(400).json({ message: 'Missing required fields' });
+            return res.status(403).json({ error: 'Unauthorized' });
         }
 
         const questionPaper = await QuestionPaper.findById(questionPaperId);
         if (!questionPaper) {
-            return res.status(404).json({ message: 'Question paper not found' });
+            return res.status(404).json({ error: 'Question paper not found' });
         }
 
-        if (questionPaper.scrutinyStatus !== 'pending') {
-            return res.status(400).json({ message: 'Question paper has already been scrutinized' });
-        }
-
-        // Update the question paper with scrutinizer details and set request status to pending
         questionPaper.scrutinizerId = scrutinizerId;
         questionPaper.scrutinizerName = scrutinizerName;
         questionPaper.scrutinyRequestStatus = 'pending';
-        await questionPaper.save();
+        questionPaper.scrutinyDeadline = scrutinyDeadline;
+        questionPaper.scrutinyNotificationSent = false;
 
+        await questionPaper.save();
         res.json({ message: 'Scrutinizer assigned successfully' });
     } catch (error) {
         console.error('Error assigning scrutinizer:', error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ error: 'Server error' });
     }
 });
 
@@ -1039,6 +1102,289 @@ app.post('/api/respond-to-scrutiny-request', async (req, res) => {
         console.error('Error responding to scrutiny request:', error);
         res.status(500).json({ message: 'Server error' });
     }
+});
+
+// Add new endpoint to check deadlines
+app.get('/api/check-deadlines', async (req, res) => {
+    try {
+        if (!req.session.user) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const now = new Date();
+        const threeDaysFromNow = new Date(now.getTime() + (3 * 24 * 60 * 60 * 1000));
+
+        console.log('Checking deadlines for facultyId:', req.session.user.facultyId);
+        console.log('Current time:', now);
+        console.log('Three days from now:', threeDaysFromNow);
+
+        // Find papers with approaching deadlines
+        const papers = await QuestionPaper.find({
+            $or: [
+                {
+                    facultyId: req.session.user.facultyId,
+                    submissionDeadline: { $exists: true, $ne: null }
+                },
+                {
+                    scrutinizerId: req.session.user.facultyId,
+                    scrutinyDeadline: { $exists: true, $ne: null }
+                }
+            ]
+        });
+
+        console.log('Found papers with deadlines:', papers);
+
+        // Find assignments with approaching deadlines
+        const assignments = await FacultyAssignment.find({
+            facultyId: req.session.user.facultyId,
+            deadlineDate: { $exists: true, $ne: null },
+            questionPaperStatus: 'pending'
+        });
+
+        console.log('Found assignments with deadlines:', assignments);
+
+        // Format notifications for papers
+        
+        const paperNotifications = papers.map(paper => {
+            const isSubmission = paper.facultyId === req.session.user.facultyId;
+            const deadline = isSubmission ? paper.submissionDeadline : paper.scrutinyDeadline;
+            
+            console.log('Processing paper:', {
+                paperId: paper._id,
+                subjectCode: paper.subjectCode,
+                deadline: deadline,
+                isSubmission: isSubmission
+            });
+
+            // Ensure deadline is a valid Date object
+            let deadlineDate;
+            if (typeof deadline === 'string') {
+                deadlineDate = new Date(deadline);
+            } else if (deadline instanceof Date) {
+                deadlineDate = deadline;
+            } else {
+                console.error('Invalid deadline type:', typeof deadline);
+                return null;
+            }
+
+            if (isNaN(deadlineDate.getTime())) {
+                console.error('Invalid deadline date:', deadline);
+                return null;
+            }
+
+            // Only include if deadline is within the next 3 days
+            if (deadlineDate > threeDaysFromNow || deadlineDate < now) {
+                return null;
+            }
+
+            const timeDiff = deadlineDate.getTime() - now.getTime();
+            const daysLeft = Math.max(0, Math.ceil(timeDiff / (1000 * 60 * 60 * 24)));
+
+            console.log('Calculated days left:', {
+                paperId: paper._id,
+                deadlineDate: deadlineDate,
+                timeDiff: timeDiff,
+                daysLeft: daysLeft
+            });
+
+            return {
+                paperId: paper._id,
+                subjectCode: paper.subjectCode,
+                subjectTitle: paper.subjectTitle,
+                type: isSubmission ? 'submission' : 'scrutiny',
+                deadline: deadlineDate,
+                daysLeft: daysLeft,
+                message: `Deadline for ${isSubmission ? 'submitting' : 'scrutinizing'} ${paper.subjectCode} - ${paper.subjectTitle} is in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`
+            };
+        }).filter(notification => notification !== null);
+
+        // Format notifications for assignments
+        const assignmentNotifications = assignments.map(assignment => {
+            console.log('Processing assignment:', {
+                assignmentId: assignment._id,
+                subjectCode: assignment.subjectCode,
+                deadlineDate: assignment.deadlineDate
+            });
+
+            // Ensure deadlineDate is a valid Date object
+            let deadlineDate;
+            if (typeof assignment.deadlineDate === 'string') {
+                deadlineDate = new Date(assignment.deadlineDate);
+            } else if (assignment.deadlineDate instanceof Date) {
+                deadlineDate = assignment.deadlineDate;
+            } else {
+                console.error('Invalid deadline type:', typeof assignment.deadlineDate);
+                return null;
+            }
+
+            if (isNaN(deadlineDate.getTime())) {
+                console.error('Invalid deadline date:', assignment.deadlineDate);
+                return null;
+            }
+
+            // Only include if deadline is within the next 3 days
+            if (deadlineDate > threeDaysFromNow || deadlineDate < now) {
+                return null;
+            }
+
+            const timeDiff = deadlineDate.getTime() - now.getTime();
+            const daysLeft = Math.max(0, Math.ceil(timeDiff / (1000 * 60 * 60 * 24)));
+
+            console.log('Calculated days left:', {
+                assignmentId: assignment._id,
+                deadlineDate: deadlineDate,
+                timeDiff: timeDiff,
+                daysLeft: daysLeft
+            });
+
+            return {
+                assignmentId: assignment._id,
+                subjectCode: assignment.subjectCode,
+                subjectTitle: assignment.subjectName,
+                type: 'assignment',
+                deadline: deadlineDate,
+                daysLeft: daysLeft,
+                message: `Deadline for submitting question paper for ${assignment.subjectCode} - ${assignment.subjectName} is in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`
+            };
+        }).filter(notification => notification !== null);
+
+        // Combine notifications
+        const notifications = [...paperNotifications, ...assignmentNotifications];
+        console.log('Generated notifications:', notifications);
+
+        res.json({ notifications });
+    } catch (error) {
+        console.error('Error checking deadlines:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Forgot Password - Send OTP
+app.post('/forgot-password', async (req, res) => {
+    try {
+        const { username } = req.body;
+        
+        if (!username) {
+            return res.status(400).json({ message: 'Username is required' });
+        }
+
+        // First find the user to get facultyId
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Then find faculty details using facultyId
+        const extraDetails = await ExtraDetails.findOne({ facultyId: user.facultyId });
+        if (!extraDetails || !extraDetails.email) {
+            return res.status(404).json({ message: 'Email not found for this user' });
+        }
+
+        // Generate and store OTP
+        const otp = generateOTP();
+        otpStore.set(user.facultyId, {
+            otp,
+            timestamp: Date.now()
+        });
+
+        // Send email with OTP
+        const mailOptions = {
+            from: emailUser,
+            to: extraDetails.email,
+            subject: 'Password Reset OTP - Anna University CEG',
+            text: `Dear ${extraDetails.fullName},\n\nYour OTP for password reset is: ${otp}\nThis OTP will expire in 5 minutes.\n\nIf you did not request this password reset, please ignore this email.\n\nRegards,\nAnna University CEG`
+        };
+
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log('OTP sent successfully to:', extraDetails.email);
+            res.json({ 
+                message: 'OTP sent successfully to your registered email',
+                email: extraDetails.email // Send back the email for verification
+            });
+        } catch (emailError) {
+            console.error('Error sending email:', emailError);
+            res.status(500).json({ 
+                message: 'Error sending OTP email',
+                error: emailError.message 
+            });
+        }
+    } catch (error) {
+        console.error('Error in forgot password:', error);
+        res.status(500).json({ 
+            message: 'Error processing forgot password request',
+            error: error.message 
+        });
+    }
+});
+
+// Verify OTP and Reset Password
+app.post('/reset-password', async (req, res) => {
+    try {
+        const { facultyId, otp, newPassword } = req.body;
+        
+        if (!facultyId || !otp || !newPassword) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+
+        // Check if OTP exists and is valid
+        const storedData = otpStore.get(facultyId);
+        if (!storedData) {
+            return res.status(400).json({ message: 'OTP not found or expired' });
+        }
+
+        // Check if OTP is expired (5 minutes)
+        if (Date.now() - storedData.timestamp > 5 * 60 * 1000) {
+            otpStore.delete(facultyId);
+            return res.status(400).json({ message: 'OTP expired' });
+        }
+
+        // Verify OTP
+        if (storedData.otp !== otp) {
+            return res.status(400).json({ message: 'Invalid OTP' });
+        }
+
+        // Find user and update password
+        const user = await User.findOne({ facultyId });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        // Clear OTP from store
+        otpStore.delete(facultyId);
+
+        res.json({ message: 'Password reset successfully' });
+    } catch (error) {
+        console.error('Error in reset password:', error);
+        res.status(500).json({ message: 'Error resetting password' });
+    }
+});
+
+// Get user details by username
+app.post('/get-user', async (req, res) => {
+  try {
+    const { username } = req.body;
+
+    if (!username) {
+      return res.status(400).json({ message: 'Username is required' });
+    }
+
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ 
+      facultyId: user.facultyId,
+      username: user.username
+    });
+  } catch (error) {
+    console.error('Error getting user:', error);
+    res.status(500).json({ message: 'Error getting user details' });
+  }
 });
 
 // Start the server

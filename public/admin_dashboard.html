@@ -768,6 +768,7 @@
 
       function showAssignScrutinizerModal(paperId) {
         const modal = document.createElement('div');
+        modal.id = 'assign-scrutinizer-modal';
         modal.style.cssText = `
             position: fixed;
             top: 0;
@@ -783,7 +784,10 @@
 
         modal.innerHTML = `
             <div style="background: white; padding: 20px; border-radius: 8px; width: 400px;">
-                <h3>Assign Scrutinizer</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">Assign Scrutinizer</h3>
+                    <button onclick="closeAssignScrutinizerModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                </div>
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 5px;">Scrutinizer ID:</label>
                     <input type="text" id="scrutinizerId" class="input-field" required>
@@ -792,8 +796,12 @@
                     <label style="display: block; margin-bottom: 5px;">Scrutinizer Name:</label>
                     <input type="text" id="scrutinizerName" class="input-field" required>
                 </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Scrutiny Deadline:</label>
+                    <input type="date" id="scrutinyDeadline" class="input-field" required>
+                </div>
                 <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button class="cancel-button" onclick="this.closest('div[style*="position: fixed"]').remove()">Cancel</button>
+                    <button class="cancel-button" onclick="closeAssignScrutinizerModal()">Cancel</button>
                     <button class="save-button" onclick="assignScrutinizer('${paperId}')">Assign</button>
                 </div>
             </div>
@@ -802,11 +810,19 @@
         document.body.appendChild(modal);
       }
 
+      function closeAssignScrutinizerModal() {
+        const modal = document.getElementById('assign-scrutinizer-modal');
+        if (modal) {
+            modal.remove();
+        }
+      }
+
       async function assignScrutinizer(paperId) {
         const scrutinizerId = document.getElementById('scrutinizerId').value.trim();
         const scrutinizerName = document.getElementById('scrutinizerName').value.trim();
+        const scrutinyDeadline = document.getElementById('scrutinyDeadline').value;
 
-        if (!scrutinizerId || !scrutinizerName) {
+        if (!scrutinizerId || !scrutinizerName || !scrutinyDeadline) {
             alert('Please fill in all fields');
             return;
         }
@@ -821,7 +837,8 @@
                 body: JSON.stringify({
                     questionPaperId: paperId,
                     scrutinizerId,
-                    scrutinizerName
+                    scrutinizerName,
+                    scrutinyDeadline: new Date(scrutinyDeadline)
                 })
             });
 
@@ -830,7 +847,7 @@
             }
 
             alert('Scrutinizer assigned successfully!');
-            document.querySelector('div[style*="position: fixed"]').remove();
+            closeAssignScrutinizerModal();
             loadQuestionPapers();
         } catch (error) {
             console.error('Error assigning scrutinizer:', error);
