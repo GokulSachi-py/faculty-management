@@ -293,6 +293,390 @@
           opacity: 1;
         }
       }
+      .tabs {
+        display: flex;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .tab-button {
+        padding: 10px 20px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        color: #666;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s ease;
+      }
+
+      .tab-button.active {
+        color: #0f83ff;
+        border-bottom: 2px solid #0f83ff;
+        font-weight: bold;
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      .assignment-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      .assignment-table th,
+      .assignment-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .assignment-table th {
+        background-color: #0f83ff !important;
+        color: white !important;
+        font-weight: bold;
+      }
+
+      .assignment-table tr:hover {
+        background-color: #f5f5f5;
+      }
+
+      .status-pending {
+        color: #ffc107;
+        font-weight: bold;
+      }
+
+      .status-approved {
+        color: #28a745;
+        font-weight: bold;
+      }
+
+      .status-rejected {
+        color: #dc3545;
+        font-weight: bold;
+      }
+
+      .action-btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+      }
+
+      .view-btn {
+        background-color: #17a2b8;
+        color: white;
+      }
+
+      .view-btn:hover {
+        background-color: #138496;
+      }
+
+      .submit-btn {
+        background-color: #28a745;
+        color: white;
+      }
+
+      .submit-btn:hover {
+        background-color: #218838;
+      }
+
+      .submit-btn:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
+
+      .assignment-table thead {
+        display: table-header-group;
+      }
+      .assignment-table {
+        min-height: 60px;
+      }
+
+      /* Override any conflicting styles */
+      .dashboard-card .assignment-table th {
+        background-color: #0f83ff !important;
+        color: white !important;
+        font-weight: bold;
+      }
+
+      /* Scrutiny Table Styles */
+      .assignment-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .assignment-table th {
+        background-color: #0f83ff;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        font-weight: 500;
+      }
+
+      .assignment-table td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+        vertical-align: middle;
+      }
+
+      .assignment-table tr:hover {
+        background-color: #f8f9fa;
+      }
+
+      .status-approved {
+        color: #28a745;
+        font-weight: 500;
+        background: #e8f5e9;
+        padding: 4px 8px;
+        border-radius: 4px;
+      }
+
+      .status-rejected {
+        color: #dc3545;
+        font-weight: 500;
+        background: #ffebee;
+        padding: 4px 8px;
+        border-radius: 4px;
+      }
+
+      .action-btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        margin: 0 4px;
+      }
+
+      .accept-btn {
+        background-color: #28a745;
+        color: white;
+      }
+
+      .reject-btn {
+        background-color: #dc3545;
+        color: white;
+      }
+
+      .submit-btn {
+        background-color: #0f83ff;
+        color: white;
+      }
+
+      .view-btn {
+        background-color: #6c757d;
+        color: white;
+      }
+
+      .action-btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
+
+      /* Modal Styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        overflow: auto;
+      }
+
+      .modal-content {
+        background-color: #fefefe;
+        margin: 2% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 800px;
+        border-radius: 8px;
+        position: relative;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      .close-btn {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        font-size: 24px;
+        font-weight: bold;
+        color: #666;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0 8px;
+        line-height: 1;
+      }
+
+      .close-btn:hover {
+        color: #000;
+      }
+
+      /* Approval Table Styles */
+      #assignmentTable {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      #assignmentTable th {
+        background-color: #0f83ff;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        font-weight: 500;
+      }
+
+      #assignmentTable td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+        vertical-align: middle;
+      }
+
+      #assignmentTable tr:hover {
+        background-color: #f8f9fa;
+      }
+
+      .set-question-paper-button {
+        background-color: #0f83ff;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .set-question-paper-button:hover {
+        background-color: #0b6cd9;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .set-question-paper-button:disabled {
+        background-color: #e9ecef;
+        color: #6c757d;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .no-assignments {
+        text-align: center;
+        padding: 20px;
+        color: #6c757d;
+        font-style: italic;
+        background-color: #f8f9fa;
+      }
+
+      /* Status Indicators */
+      .status-submitted {
+        color: #28a745;
+        font-weight: 500;
+        background: #e8f5e9;
+        padding: 4px 8px;
+        border-radius: 4px;
+        display: inline-block;
+      }
+
+      /* Response Section Styles */
+      .response-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: transform 0.3s ease;
+      }
+
+      .response-card:hover {
+        transform: translateY(-2px);
+      }
+
+      .response-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      .response-buttons button {
+        flex: 1;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .response-buttons button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .accept-btn {
+        background-color: #28a745;
+        color: white;
+      }
+
+      .accept-btn:hover {
+        background-color: #218838;
+      }
+
+      .decline-btn {
+        background-color: #dc3545;
+        color: white;
+      }
+
+      .decline-btn:hover {
+        background-color: #c82333;
+      }
+
+      /* Add these styles to your existing CSS */
+      .text-danger {
+        color: #dc3545;
+        font-weight: bold;
+      }
+
+      .text-warning {
+        color: #ffc107;
+        font-weight: bold;
+      }
+
+      #scrutiny-assignments-body td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+        vertical-align: middle;
+      }
+
+      #scrutiny-assignments-body tr:last-child td {
+        border-bottom: none;
+      }
     </style>
   </head>
   <body>
@@ -348,8 +732,24 @@
 
       <!-- Scrutiny Requests Section -->
       <div class="dashboard-card">
-        <h2>Scrutiny Requests</h2>
-        <div id="scrutiny-requests-container"></div>
+        <h2>Scrutiny Assignments</h2>
+        <table class="assignment-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Subject Code</th>
+              <th>Subject Name</th>
+              <th>Department</th>
+              <th>Semester</th>
+              <th>Deadline</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="scrutiny-assignments-body">
+            <!-- Dynamic rows will be added here -->
+          </tbody>
+        </table>
       </div>
     </main>
 
@@ -374,7 +774,6 @@
               const localSession = getSessionFromLocalStorage();
               if (!localSession) {
                   console.log('No local session found');
-                  window.location.href = '/index.html';
                   return false;
               }
 
@@ -397,13 +796,13 @@
                   }
               }
 
-              console.log('Invalid session, redirecting to login');
-              window.location.href = '/index.html';
-              return false;
+              // If session check fails, continue with local session
+              console.log('Server session check failed, continuing with local session');
+              return true;
           } catch (error) {
               console.error('Session check error:', error);
-              window.location.href = '/index.html';
-              return false;
+              // On error, continue with local session
+              return true;
           }
       }
 
@@ -452,7 +851,7 @@
         try {
             const sessionValid = await checkAndHandleSession();
             if (!sessionValid) {
-                console.log('Session invalid, redirecting to login');
+                console.log('Session check failed');
                 return;
             }
 
@@ -461,18 +860,16 @@
                 method: 'GET',
                 credentials: 'include',
                 headers: {
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
                 }
             });
 
             console.log('Fetch response status:', response.status);
+            
             if (!response.ok) {
-                if (response.status === 401) {
-                    console.log('Session expired');
-                    window.location.href = '/index.html';
-                    return;
-                }
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
@@ -643,7 +1040,7 @@
       refreshInterval = setInterval(async () => {
         await Promise.all([
           fetchFacultyAssignments(),
-          loadScrutinyRequests(),
+          loadScrutinyAssignments(),
           checkDeadlines()
         ]);
       }, 30000); // Check every 30 seconds
@@ -659,10 +1056,12 @@
         // Then load other data
         await Promise.all([
           fetchFacultyAssignments(),
-          loadScrutinyRequests()
+          loadScrutinyAssignments()
         ]);
         // Start periodic refresh
         startPeriodicRefresh();
+      } else {
+        console.log('Session validation failed');
       }
     };
 
@@ -798,149 +1197,141 @@
       }
     }
 
-    // Update the loadScrutinyRequests function
-    async function loadScrutinyRequests() {
+    // Update the loadScrutinyAssignments function
+    async function loadScrutinyAssignments() {
       try {
         const sessionValid = await checkAndHandleSession();
-        if (!sessionValid) return;
+        if (!sessionValid) {
+          console.log('Session check failed');
+          return;
+        }
 
-        const response = await fetch('/api/pending-scrutiny-requests', {
+        const response = await fetch('/api/scrutiny-assignments', {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch scrutiny assignments');
+        }
+
+        const assignments = await response.json();
+        console.log('Received scrutiny assignments:', assignments); // Debug log
+        const tbody = document.getElementById('scrutiny-assignments-body');
+        tbody.innerHTML = '';
+
+        if (assignments.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No scrutiny assignments assigned</td></tr>';
+          return;
+        }
+
+        assignments.forEach((assignment, index) => {
+          const row = document.createElement('tr');
+          
+          // Format the deadline date to dd/mm/yyyy
+          const deadline = assignment.scrutinyDeadline ? new Date(assignment.scrutinyDeadline) : null;
+          const formattedDeadline = deadline ? 
+            `${deadline.getDate().toString().padStart(2, '0')}/${(deadline.getMonth() + 1).toString().padStart(2, '0')}/${deadline.getFullYear()}` 
+            : 'Not set';
+          
+          // Determine the status and actions
+          let statusHtml = '';
+          let actionsHtml = '';
+          
+          if (assignment.scrutinyStatus === 'approved') {
+            statusHtml = '<span class="status-approved">Approved</span>';
+          } else if (assignment.scrutinyStatus === 'rejected') {
+            statusHtml = '<span class="status-rejected">Rejected</span>';
+          } else if (assignment.scrutinyRequestStatus === 'pending') {
+            actionsHtml = `
+              <button class="action-btn accept-btn" onclick="respondToScrutinyRequest('${assignment._id}', 'accepted')">Accept</button>
+              <button class="action-btn reject-btn" onclick="respondToScrutinyRequest('${assignment._id}', 'rejected')">Reject</button>
+            `;
+          } else if (assignment.scrutinyStatus === 'pending') {
+            actionsHtml = `<button class="action-btn submit-btn" onclick="submitScrutiny('${assignment._id}')">Submit Scrutiny</button>`;
+          }
+
+          // Always show view button
+          const viewButtonHtml = `<button class="action-btn view-btn" onclick="viewQuestionPaper('${assignment._id}')">View Paper</button>`;
+
+          row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${assignment.subjectCode}</td>
+            <td>${assignment.subjectTitle}</td>
+            <td>${assignment.department || 'N/A'}</td>
+            <td>${assignment.semester || 'N/A'}</td>
+            <td>${formattedDeadline}</td>
+            <td>${statusHtml}</td>
+            <td>${viewButtonHtml} ${actionsHtml}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      } catch (error) {
+        console.error('Error loading scrutiny assignments:', error);
+        const tbody = document.getElementById('scrutiny-assignments-body');
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: red;">Failed to load scrutiny assignments. Please try again.</td></tr>';
+      }
+    }
+
+    // Add the viewQuestionPaper function
+    async function viewQuestionPaper(paperId) {
+      try {
+        const response = await fetch(`/api/questionpaper/${paperId}`, {
           credentials: 'include'
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch scrutiny requests');
+          throw new Error('Failed to fetch question paper');
         }
 
-        const requests = await response.json();
-        const container = document.getElementById('scrutiny-requests-container');
+        const paper = await response.json();
+        
+        // Create modal for viewing the paper
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.display = 'block';
 
-        if (requests.length === 0) {
-          container.innerHTML = '<div class="no-requests">No pending scrutiny requests</div>';
-          return;
-        }
-
-        container.innerHTML = requests.map(request => `
-          <div class="request-card" data-paper-id="${request._id}">
-              <h3>${request.subjectCode} - ${request.subjectTitle}</h3>
-              <div class="request-details">
-                  <p><strong>Department:</strong> ${request.department}</p>
-                  <p><strong>Semester:</strong> ${request.semester}</p>
-                  <p><strong>Regulation:</strong> ${request.regulation}</p>
-                  <p><strong>Time:</strong> ${request.time}</p>
-                  <p><strong>Maximum Marks:</strong> ${request.maxMarks}</p>
+        modal.innerHTML = `
+          <div class="modal-content">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+              <h2 style="margin: 0; color: #0f83ff;">Question Paper - ${paper.subjectCode}</h2>
+              <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 10px 0;">
+              <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: #333;">${paper.examName || 'Examination'}</h2>
+                <p style="margin: 5px 0;"><strong>Department:</strong> ${paper.department || 'N/A'}</p>
+                <p style="margin: 5px 0;"><strong>Semester:</strong> ${paper.semester || 'N/A'}</p>
+                <p style="margin: 5px 0;"><strong>Subject Code:</strong> ${paper.subjectCode}</p>
+                <p style="margin: 5px 0;"><strong>Subject Title:</strong> ${paper.subjectTitle}</p>
+                <p style="margin: 5px 0;"><strong>Regulation:</strong> ${paper.regulation || 'N/A'}</p>
+                <p style="margin: 5px 0;"><strong>Time:</strong> ${paper.time || 'N/A'}</p>
+                <p style="margin: 5px 0;"><strong>Maximum Marks:</strong> ${paper.maxMarks || 'N/A'}</p>
               </div>
-              <div class="button-group">
-                  <button onclick="respondToScrutinyRequest('${request._id}', 'accepted')" class="accept-btn">Accept</button>
-                  <button onclick="respondToScrutinyRequest('${request._id}', 'rejected')" class="reject-btn">Reject</button>
+              <div style="border-top: 2px solid #333; margin: 20px 0;"></div>
+              <div class="paper-content" style="padding: 15px;">
+                <h3 style="color: #0f83ff; margin-top: 20px; margin-bottom: 10px; text-align: center;">Part A (10 x 2 = 20 Marks)</h3>
+                <div style="white-space: normal; line-height: 1.5; background: #fff; padding: 15px; border-radius: 4px; border: 1px solid #eee; text-align: left;">
+                  ${paper.partAQuestions ? paper.partAQuestions.map((q, i) => `<div>${i + 1}. ${q}</div>`).join('') : 'No questions'}
+                </div>
+                <h3 style="color: #0f83ff; margin-top: 20px; margin-bottom: 10px; text-align: center;">Part B (8 x 8 = 64 Marks)</h3>
+                <div style="white-space: normal; line-height: 1.5; background: #fff; padding: 15px; border-radius: 4px; border: 1px solid #eee; text-align: left;">
+                  ${paper.partBQuestions ? paper.partBQuestions.map((q, i) => `<div>${i + 11}. ${q}</div>`).join('') : 'No questions'}
+                </div>
+                <h3 style="color: #0f83ff; margin-top: 20px; margin-bottom: 10px; text-align: center;">Part C (2 x 8 = 16 Marks)</h3>
+                <div style="white-space: normal; line-height: 1.5; background: #fff; padding: 15px; border-radius: 4px; border: 1px solid #eee; text-align: left;">
+                  ${paper.partCQuestions ? paper.partCQuestions.map((q, i) => `<div>${i + 23}. ${q}</div>`).join('') : 'No questions'}
+                </div>
               </div>
+            </div>
           </div>
-        `).join('');
+        `;
+
+        document.body.appendChild(modal);
       } catch (error) {
-        console.error('Error loading scrutiny requests:', error);
-        const container = document.getElementById('scrutiny-requests-container');
-        container.innerHTML = '<div class="error-message">Failed to load scrutiny requests. Please try again later.</div>';
-      }
-    }
-
-    // Add styles for scrutiny requests
-    const style = document.createElement('style');
-    style.textContent = `
-      .request-card {
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-        margin-bottom: 20px;
-      }
-      .request-details {
-        margin: 15px 0;
-      }
-      .request-details p {
-        margin: 5px 0;
-        color: #333;
-      }
-      .button-group {
-        display: flex;
-        gap: 10px;
-        margin-top: 15px;
-      }
-      .accept-btn {
-        background-color: #28a745;
-        color: white;
-        padding: 8px 16px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        flex: 1;
-      }
-      .reject-btn {
-        background-color: #dc3545;
-        color: white;
-        padding: 8px 16px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        flex: 1;
-      }
-      .accept-btn:hover {
-        background-color: #218838;
-      }
-      .reject-btn:hover {
-        background-color: #c82333;
-      }
-      .no-requests {
-        text-align: center;
-        padding: 20px;
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        color: #666;
-      }
-      .error-message {
-        text-align: center;
-        padding: 20px;
-        background-color: #fff3f3;
-        border-radius: 8px;
-        color: #dc3545;
-      }
-    `;
-    document.head.appendChild(style);
-
-    // Add function to handle scrutiny request responses
-    async function respondToScrutinyRequest(paperId, response) {
-      try {
-        const sessionValid = await checkAndHandleSession();
-        if (!sessionValid) return;
-
-        const result = await fetch('/api/respond-to-scrutiny-request', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify({ questionPaperId: paperId, response })
-        });
-
-        if (!result.ok) {
-          throw new Error('Failed to respond to scrutiny request');
-        }
-
-        if (response === 'accepted') {
-          // Redirect to scrutiny page with the paperId
-          window.location.href = `http://localhost:3000/scrutiny.html?paperId=${paperId}`;
-        } else {
-          // Show rejection alert and remove the request card
-          alert('Scrutiny request rejected successfully');
-          const requestCard = document.querySelector(`.request-card[data-paper-id="${paperId}"]`);
-          if (requestCard) {
-              requestCard.remove();
-          }
-          // Reload scrutiny requests to update the list
-          loadScrutinyRequests();
-        }
-      } catch (error) {
-        console.error('Error responding to scrutiny request:', error);
-        alert('Failed to respond to scrutiny request. Please try again.');
+        console.error('Error viewing question paper:', error);
+        alert('Failed to load question paper. Please try again.');
       }
     }
 
@@ -987,6 +1378,59 @@
         }
       } catch (error) {
         console.error('Error checking deadlines:', error);
+      }
+    }
+
+    async function viewScrutinyPaper(paperId) {
+      window.location.href = `/scrutiny.html?paperId=${paperId}`;
+    }
+
+    async function submitScrutiny(paperId) {
+      window.location.href = `/scrutiny.html?paperId=${paperId}&submit=true`;
+    }
+
+    // Add function to handle scrutiny request responses
+    async function respondToScrutinyRequest(paperId, response) {
+      try {
+        const sessionValid = await checkAndHandleSession();
+        if (!sessionValid) {
+            console.log('Session check failed');
+            return;
+        }
+
+        const result = await fetch('/api/respond-to-scrutiny-request', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ questionPaperId: paperId, response })
+        });
+
+        if (!result.ok) {
+          throw new Error('Failed to respond to scrutiny request');
+        }
+
+        if (response === 'accepted') {
+          window.location.href = `/scrutiny.html?paperId=${paperId}`;
+        } else {
+          alert('Scrutiny request rejected successfully');
+          const requestCard = document.querySelector(`.request-card[data-paper-id="${paperId}"]`);
+          if (requestCard) {
+              requestCard.remove();
+          }
+          loadScrutinyAssignments();
+        }
+      } catch (error) {
+        console.error('Error responding to scrutiny request:', error);
+        alert('Failed to respond to scrutiny request. Please try again.');
+      }
+    }
+
+    function closeModal() {
+      const modal = document.querySelector('.modal');
+      if (modal) {
+        modal.remove();
       }
     }
     </script>

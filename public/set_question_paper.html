@@ -57,6 +57,25 @@
       font-size: 14px;
     }
 
+    .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      background: #fff;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      outline: none;
+      box-sizing: border-box;
+      margin-top: 2px;
+    }
+
+    .form-group select:focus {
+      border-color: #888;
+    }
+
     .button-group {
       display: flex;
       justify-content: space-between;
@@ -172,6 +191,18 @@
       <div class="form-group">
         <label for="regulation">Regulation:</label>
         <input type="text" id="regulation" required readonly />
+      </div>
+      <div class="form-group">
+        <label for="examDate">Exam Date:</label>
+        <input type="date" id="examDate" required />
+      </div>
+      <div class="form-group">
+        <label for="session">Session:</label>
+        <select id="session" required>
+          <option value="">Select Session</option>
+          <option value="FN">FN (Forenoon)</option>
+          <option value="AN">AN (Afternoon)</option>
+        </select>
       </div>
       <div class="form-group">
         <label for="time">Time Duration:</label>
@@ -424,14 +455,37 @@
       const regulation = document.getElementById('regulation').value.trim();
       const time = document.getElementById('time').value.trim();
       const maxMarks = document.getElementById('maxMarks').value.trim();
+      const examDate = document.getElementById('examDate').value;
+      const sessionVal = document.getElementById('session').value;
 
       const partAQuestions = Array.from(document.querySelectorAll('#partAQuestions .form-group input[type="text"]')).map(input => input.value.trim());
       const partBQuestions = Array.from(document.querySelectorAll('#partBQuestions .form-group input[type="text"]')).map(input => input.value.trim());
       const partCQuestions = Array.from(document.querySelectorAll('#partCQuestions .form-group input[type="text"]')).map(input => input.value.trim());
 
-      if (!examName || !department || !semester || !subjectCode || !subjectTitle || !regulation || !time || !maxMarks) {
+      if (!examName || !department || !semester || !subjectCode || !subjectTitle || !regulation || !time || !maxMarks || !examDate || !sessionVal) {
         alert('Please fill in all the fields before submitting.');
         return;
+      }
+
+      // Fetch the deadline date for this assignment from the backend
+      let deadlineDate = null;
+      try {
+        const res = await fetch(`/api/faculty-assignments`, { credentials: 'include' });
+        if (res.ok) {
+          const assignments = await res.json();
+          const assignment = assignments.find(a => a.facultyId === facultyId && a.subjectCode === subjectCode);
+          if (assignment && assignment.deadlineDate) {
+            deadlineDate = new Date(assignment.deadlineDate);
+          }
+        }
+      } catch (e) { /* ignore */ }
+
+      if (deadlineDate) {
+        const examDateObj = new Date(examDate);
+        if (examDateObj <= deadlineDate) {
+          alert('Exam date must be after the deadline date for question paper submission.');
+          return;
+        }
       }
 
       const questionPaperData = {
@@ -447,7 +501,9 @@
         partAQuestions,
         partBQuestions,
         partCQuestions,
-        role: (role || 'Paper Setter').trim()
+        role: (role || 'Paper Setter').trim(),
+        session: sessionVal,
+        examDate
       };
 
       try {

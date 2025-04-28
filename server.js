@@ -7,6 +7,7 @@ const path = require('path');
 const nodemailer = require('nodemailer');
 const config = require('./config');
 require('dotenv').config();
+const ApprovalRequest = require('./models/ApprovalRequest');
 
 // Check if email credentials are set
 const emailUser = process.env.EMAIL_USER || config.email?.user;
@@ -68,12 +69,12 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false, // Set to true in production with HTTPS
+        secure: false,
         httpOnly: true,
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        maxAge: 10 * 60 * 1000, // 10 minutes
         sameSite: 'lax'
     },
-    rolling: true
+    rolling: true // Reset expiration on each request
 }));
 
 // Debug middleware for session tracking
@@ -165,6 +166,9 @@ const questionPaperSchema = new mongoose.Schema({
     subjectCode: { type: String, required: true },
     subjectTitle: { type: String, required: true },
     regulation: { type: String, required: true },
+    year: { type: Number, required: true },
+    examDate: { type: Date, required: true },
+    session: { type: String, required: true },
     time: { type: String, required: true },
     maxMarks: { type: String, required: true },
     partAQuestions: { type: [String], required: true },
@@ -179,7 +183,9 @@ const questionPaperSchema = new mongoose.Schema({
     submissionDeadline: { type: Date },
     scrutinyDeadline: { type: Date },
     submissionNotificationSent: { type: Boolean, default: false },
-    scrutinyNotificationSent: { type: Boolean, default: false }
+    scrutinyNotificationSent: { type: Boolean, default: false },
+    adminApproval: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' },
+    adminApprovalDate: { type: Date }
 });
 
 // Models
@@ -423,25 +429,56 @@ app.post('/remove-faculty-assignment', async (req, res) => {
     const { facultyId, subjectCode, role } = req.body;
 
     if (!facultyId || !subjectCode) {
+        console.log('Missing required fields:', { facultyId, subjectCode });
         return res.status(400).json({ message: 'Faculty ID and Subject Code are required' });
     }
 
     try {
         // Remove the specific assignment from FacultyAssignment collection
         const result = await FacultyAssignment.deleteOne({ facultyId, subjectCode, role });
-        console.log(`Deleted ${result.deletedCount} assignment from FacultyAssignment`);
+        console.log(`Deleted faculty assignment:`, { facultyId, subjectCode, role, deletedCount: result.deletedCount });
 
         if (result.deletedCount === 0) {
             return res.status(404).json({ message: 'No assignment found for the faculty' });
         }
 
+        // Find and remove any question papers associated with this faculty and subject
+        const questionPapers = await QuestionPaper.find({ facultyId, subjectCode });
+        console.log(`Found ${questionPapers.length} question papers to process`);
+        
+        // For each question paper, we need to handle scrutiny assignments
+        let scrutinyAssignmentsRemoved = 0;
+        for (const paper of questionPapers) {
+            if (paper.scrutinizerId) {
+                // Remove the scrutiny assignment from FacultyAssignment
+                const scrutinyResult = await FacultyAssignment.deleteOne({ 
+                    facultyId: paper.scrutinizerId, 
+                    subjectCode, 
+                    role: 'Scrutinizer' 
+                });
+                if (scrutinyResult.deletedCount > 0) {
+                    scrutinyAssignmentsRemoved++;
+                }
+            }
+        }
+        console.log(`Removed ${scrutinyAssignmentsRemoved} scrutiny assignments`);
+
+        // Now delete the question papers
+        const questionPaperResult = await QuestionPaper.deleteMany({ facultyId, subjectCode });
+        console.log(`Deleted ${questionPaperResult.deletedCount} question papers`);
+
         res.status(200).json({ 
-            message: 'Faculty assignment removed successfully',
-            deletedCount: result.deletedCount
+            message: 'Faculty assignment and associated question papers removed successfully',
+            deletedCount: result.deletedCount,
+            questionPapersDeleted: questionPaperResult.deletedCount,
+            scrutinyAssignmentsRemoved
         });
     } catch (err) {
         console.error('Error deleting faculty assignment:', err);
-        res.status(500).json({ message: 'Server error while deleting' });
+        res.status(500).json({ 
+            message: 'Server error while deleting',
+            error: err.message 
+        });
     }
 });
 
@@ -687,16 +724,18 @@ app.post('/api/questionpaper', async (req, res) => {
             subjectCode,
             subjectTitle,
             regulation,
+            examDate,
             time,
             maxMarks,
             partAQuestions,
             partBQuestions,
             partCQuestions,
-            role
+            role,
+            session
         } = req.body;
 
         // Validate required fields
-        if (!facultyId || !examName || !department || !semester || !subjectCode || !subjectTitle || !regulation || !time || !maxMarks || !partAQuestions || !partBQuestions || !partCQuestions || !role) {
+        if (!facultyId || !examName || !department || !semester || !subjectCode || !subjectTitle || !regulation || !examDate || !time || !maxMarks || !partAQuestions || !partBQuestions || !partCQuestions || !role || !session) {
             return res.status(400).json({ message: 'All fields are required.' });
         }
 
@@ -718,6 +757,17 @@ app.post('/api/questionpaper', async (req, res) => {
             return res.status(400).json({ message: 'Invalid deadline date in assignment.' });
         }
 
+        // Calculate year from semester
+        let year = 1;
+        const semMatch = (semester || '').match(/(\d+)/);
+        if (semMatch) {
+            const semNum = parseInt(semMatch[1], 10);
+            if (semNum >= 1 && semNum <= 2) year = 1;
+            else if (semNum >= 3 && semNum <= 4) year = 2;
+            else if (semNum >= 5 && semNum <= 6) year = 3;
+            else if (semNum >= 7 && semNum <= 8) year = 4;
+        }
+
         // Create a new question paper document
         const newQuestionPaper = new QuestionPaper({
             facultyId,
@@ -727,12 +777,15 @@ app.post('/api/questionpaper', async (req, res) => {
             subjectCode,
             subjectTitle,
             regulation,
+            year,
+            examDate: new Date(examDate),
             time,
             maxMarks,
             partAQuestions,
             partBQuestions,
             partCQuestions,
             role,
+            session,
             submissionDeadline: deadlineDate
         });
 
@@ -768,13 +821,11 @@ app.post('/api/questionpaper', async (req, res) => {
 
 app.get('/api/questionpapers', async (req, res) => {
     try {
-        if (!req.session.user || req.session.user.role !== 'admin') {
+        if (!req.session.user) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
-        const questionPapers = await QuestionPaper.find({})
-            .sort({ createdAt: -1 });
-        
+        const questionPapers = await QuestionPaper.find({}).sort({ createdAt: -1 });
         res.json(questionPapers);
     } catch (error) {
         console.error('Error fetching question papers:', error);
@@ -817,7 +868,8 @@ app.get('/api/questionpaper/:id', async (req, res) => {
             scrutinyRequestStatus: questionPaper.scrutinyRequestStatus,
             scrutinyRemarks: questionPaper.scrutinyRemarks,
             scrutinizerId: questionPaper.scrutinizerId,
-            scrutinizerName: questionPaper.scrutinizerName
+            scrutinizerName: questionPaper.scrutinizerName,
+            examDate: questionPaper.examDate
         };
 
         res.json(formattedPaper);
@@ -1385,6 +1437,209 @@ app.post('/get-user', async (req, res) => {
     console.error('Error getting user:', error);
     res.status(500).json({ message: 'Error getting user details' });
   }
+});
+
+app.get('/debug-question-papers', async (req, res) => {
+    try {
+        const { facultyId, subjectCode } = req.query;
+        const papers = await QuestionPaper.find({ facultyId, subjectCode });
+        res.json({ count: papers.length, papers });
+    } catch (err) {
+        console.error('Debug error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Add endpoint for question paper approval
+app.post('/api/questionpaper/:id/approval', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { action } = req.body;
+
+    if (!['accepted', 'rejected'].includes(action)) {
+      return res.status(400).json({ success: false, message: 'Invalid action' });
+    }
+
+    const questionPaper = await QuestionPaper.findById(id);
+    if (!questionPaper) {
+      return res.status(404).json({ success: false, message: 'Question paper not found' });
+    }
+
+    // Update the question paper status
+    questionPaper.adminApproval = action;
+    questionPaper.adminApprovalDate = new Date();
+    await questionPaper.save();
+
+    res.json({ success: true, message: `Question paper ${action} successfully` });
+  } catch (error) {
+    console.error('Error processing approval:', error);
+    res.status(500).json({ success: false, message: 'Failed to process approval' });
+  }
+});
+
+// Add endpoint for fetching accepted scrutiny assignments
+app.get('/api/accepted-scrutiny-assignments', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.role !== 'faculty') {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const scrutinizerId = req.session.user.facultyId;
+        const questionPapers = await QuestionPaper.find({
+            scrutinizerId,
+            scrutinyRequestStatus: 'accepted'
+        }).sort({ createdAt: -1 });
+
+        // Format the response to include necessary details
+        const formattedPapers = questionPapers.map(paper => ({
+            _id: paper._id,
+            subjectCode: paper.subjectCode,
+            subjectTitle: paper.subjectTitle,
+            department: paper.department,
+            semester: paper.semester,
+            regulation: paper.regulation,
+            time: paper.time,
+            maxMarks: paper.maxMarks,
+            scrutinyStatus: paper.scrutinyStatus,
+            scrutinyDeadline: paper.scrutinyDeadline,
+            scrutinyRemarks: paper.scrutinyRemarks
+        }));
+
+        res.json(formattedPapers);
+    } catch (error) {
+        console.error('Error fetching accepted scrutiny assignments:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Add endpoint for fetching all scrutiny assignments
+app.get('/api/scrutiny-assignments', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.role !== 'faculty') {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const scrutinizerId = req.session.user.facultyId;
+        const questionPapers = await QuestionPaper.find({
+            scrutinizerId
+        }).sort({ createdAt: -1 });
+
+        // Format the response to include necessary details
+        const formattedPapers = questionPapers.map(paper => ({
+            _id: paper._id,
+            subjectCode: paper.subjectCode,
+            subjectTitle: paper.subjectTitle,
+            department: paper.department,
+            semester: paper.semester,
+            regulation: paper.regulation,
+            time: paper.time,
+            maxMarks: paper.maxMarks,
+            scrutinyStatus: paper.scrutinyStatus,
+            scrutinyRequestStatus: paper.scrutinyRequestStatus,
+            scrutinyDeadline: paper.scrutinyDeadline,
+            scrutinyRemarks: paper.scrutinyRemarks
+        }));
+
+        res.json(formattedPapers);
+    } catch (error) {
+        console.error('Error fetching scrutiny assignments:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Add endpoint for assigning scrutinizer
+app.post('/api/questionpaper/:id/assign-scrutinizer', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.role !== 'admin') {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const { scrutinizerId, scrutinizerName, scrutinyDeadline } = req.body;
+        const questionPaperId = req.params.id;
+
+        if (!scrutinizerId || !scrutinizerName || !scrutinyDeadline) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        const questionPaper = await QuestionPaper.findById(questionPaperId);
+        if (!questionPaper) {
+            return res.status(404).json({ message: 'Question paper not found' });
+        }
+
+        // Update the question paper with scrutinizer details
+        questionPaper.scrutinizerId = scrutinizerId;
+        questionPaper.scrutinizerName = scrutinizerName;
+        questionPaper.scrutinyDeadline = new Date(scrutinyDeadline);
+        questionPaper.scrutinyRequestStatus = 'pending';
+        questionPaper.scrutinyStatus = 'pending';
+
+        await questionPaper.save();
+
+        res.json({ 
+            success: true, 
+            message: 'Scrutinizer assigned successfully',
+            questionPaper: {
+                _id: questionPaper._id,
+                subjectCode: questionPaper.subjectCode,
+                subjectTitle: questionPaper.subjectTitle,
+                scrutinizerId: questionPaper.scrutinizerId,
+                scrutinizerName: questionPaper.scrutinizerName,
+                scrutinyDeadline: questionPaper.scrutinyDeadline
+            }
+        });
+    } catch (error) {
+        console.error('Error assigning scrutinizer:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Debug endpoint to check assignments and papers
+app.get('/api/debug-state', async (req, res) => {
+    try {
+        const assignments = await FacultyAssignment.find({});
+        const papers = await QuestionPaper.find({});
+
+        res.json({
+            assignmentsCount: assignments.length,
+            assignments: assignments,
+            papersCount: papers.length,
+            papers: papers
+        });
+    } catch (error) {
+        console.error('Debug error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Debug endpoint to check database connection
+app.get('/api/debug-db', async (req, res) => {
+    try {
+        // Check MongoDB connection state
+        const state = mongoose.connection.readyState;
+        const stateMap = {
+            0: 'disconnected',
+            1: 'connected',
+            2: 'connecting',
+            3: 'disconnecting'
+        };
+
+        // Count documents in collections
+        const questionPapersCount = await QuestionPaper.countDocuments();
+        const facultyAssignmentsCount = await FacultyAssignment.countDocuments();
+        const usersCount = await User.countDocuments();
+
+        res.json({
+            dbState: stateMap[state],
+            collections: {
+                questionPapers: questionPapersCount,
+                facultyAssignments: facultyAssignmentsCount,
+                users: usersCount
+            }
+        });
+    } catch (error) {
+        console.error('Database check error:', error);
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // Start the server

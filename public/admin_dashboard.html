@@ -385,6 +385,157 @@
         max-width: 200px;
         overflow: hidden;
       }
+
+      .approval-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      .approval-table th,
+      .approval-table td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+      }
+
+      .approval-table th {
+        background-color: #0f83ff;
+        color: white;
+        position: sticky;
+        top: 0;
+      }
+
+      .approval-table tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+
+      .approval-table tr:hover {
+        background-color: #f5f5f5;
+      }
+
+      .approval-status {
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-weight: bold;
+        text-align: center;
+      }
+
+      .status-pending {
+        background-color: #ffc107;
+        color: #000;
+      }
+
+      .status-approved {
+        background-color: #28a745;
+        color: white;
+      }
+
+      .status-rejected {
+        background-color: #dc3545;
+        color: white;
+      }
+
+      .approval-actions {
+        text-align: center;
+        vertical-align: middle;
+        padding: 12px;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+      }
+
+      .approve-btn,
+      .reject-btn,
+      .view-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        min-width: 100px;
+        display: inline-block;
+      }
+
+      .approve-btn {
+        background-color: #28a745;
+        color: white;
+      }
+
+      .reject-btn {
+        background-color: #dc3545;
+        color: white;
+      }
+
+      .view-btn {
+        background-color: #17a2b8;
+        color: white;
+      }
+
+      .approve-btn:hover {
+        background-color: #218838;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .reject-btn:hover {
+        background-color: #c82333;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .view-btn:hover {
+        background-color: #138496;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .approval-label-approved {
+        color: #28a745;
+        font-weight: 500;
+        background: #e8f5e9;
+        padding: 6px 12px;
+        border-radius: 4px;
+        display: inline-block;
+        min-width: 100px;
+      }
+
+      .approval-label-rejected {
+        color: #dc3545;
+        font-weight: 500;
+        background: #ffebee;
+        padding: 6px 12px;
+        border-radius: 4px;
+        display: inline-block;
+        min-width: 100px;
+      }
+
+      .paper-details {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+      }
+
+      .paper-details p {
+        margin: 5px 0;
+      }
+
+      .paper-content {
+        padding: 15px;
+      }
+
+      .paper-content h3 {
+        color: #0f83ff;
+        margin-top: 20px;
+        margin-bottom: 10px;
+      }
+
+      .paper-content div {
+        white-space: pre-wrap;
+        line-height: 1.5;
+      }
     </style>
   </head>
 
@@ -404,6 +555,13 @@
             href="#question-papers-content"
             onclick="showSection('question-papers-content', this)"
             >Question Papers</a
+          >
+        </li>
+        <li>
+          <a
+            href="#approval-content"
+            onclick="showSection('approval-content', this)"
+            >Approval</a
           >
         </li>
         <li>
@@ -480,6 +638,34 @@
               </tr>
             </thead>
             <tbody id="question-papers-body"></tbody>
+          </table>
+        </div>
+
+        <div
+          id="approval-content"
+          class="feature-card hidden-section"
+          style="margin-left: 30px"
+        >
+          <h3>Question Paper Approval</h3>
+          <p>Approve question papers that have been accepted by scrutiny.</p>
+          <table class="approval-table">
+            <thead>
+              <tr>
+                <th>S.No</th>
+                <th>Date of Exam</th>
+                <th>Session</th>
+                <th>Year</th>
+                <th>Semester</th>
+                <th>Subject Code</th>
+                <th>Subject Name</th>
+                <th>Print Question Paper</th>
+                <th>Question Paper</th>
+                <th>Approval</th>
+              </tr>
+            </thead>
+            <tbody id="approval-table-body">
+              <!-- Approval entries will be populated here -->
+            </tbody>
           </table>
         </div>
 
@@ -754,7 +940,7 @@
         if (refreshInterval) {
             clearInterval(refreshInterval);
         }
-        refreshInterval = setInterval(fetchAllFacultyAssignments, 30000);
+        refreshInterval = setInterval(fetchAllFacultyAssignments, 300000);
       }
 
       // Function to stop periodic refresh
@@ -769,6 +955,7 @@
       window.onload = async function() {
         await fetchAllFacultyAssignments();
         await loadQuestionPapers();
+        await loadApprovals();
         startPeriodicRefresh();
       };
 
@@ -797,6 +984,7 @@
 
             alert(result.message || "Assignment removed successfully");
             await fetchAllFacultyAssignments();
+            await loadQuestionPapers();
 
         } catch (error) {
             console.error("Remove error:", error);
@@ -841,7 +1029,7 @@
             alert(result.message || "Faculty assignment saved successfully");
             isInputActive = false;
             await fetchAllFacultyAssignments();
-            startPeriodicRefresh();
+            await loadQuestionPapers();
 
         } catch (error) {
             console.error("Save error:", error);
@@ -882,12 +1070,12 @@
                     <td>${index + 1}</td>
                     <td>${paper.subjectCode}</td>
                     <td>${paper.subjectTitle}</td>
-                    <td>${paper.facultyId}</td>
+                    <td>${paper.facultyId || 'N/A'}</td>
                     <td>${paper.scrutinyStatus}</td>
                     <td>
                         <div class="action-buttons-container">
                             <button onclick="downloadPaper('${paper._id}')" class="download-btn">Download</button>
-                            ${paper.scrutinyStatus === 'pending' ? 
+                            ${paper.scrutinyStatus === 'pending' && !paper.scrutinizerId ? 
                                 `<button onclick="showAssignScrutinizerModal('${paper._id}')" class="assign-scrutinizer-btn">Assign Scrutinizer</button>` : 
                                 `<button onclick="viewScrutiny('${paper._id}')" class="view-scrutiny-btn">View Scrutiny</button>`
                             }
@@ -901,13 +1089,19 @@
             loadPaymentData();
         } catch (error) {
             console.error('Error loading question papers:', error);
-            alert('Failed to load question papers. Please try again.');
+            const tbody = document.getElementById('question-papers-body');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">Failed to load question papers. Please try again later.</td></tr>';
         }
       }
       
       // Function to load payment data for paper setters and scrutiny checkers
       async function loadPaymentData() {
         try {
+            const assignmentsResponse = await fetch('/api/faculty-assignments', {
+                credentials: 'include'
+            });
+            const assignments = await assignmentsResponse.json();
+            
             // Load paper setters data
             const paperSettersBody = document.getElementById('paper-setters-payment-body');
             paperSettersBody.innerHTML = '';
@@ -916,44 +1110,7 @@
             const scrutinyCheckersBody = document.getElementById('scrutiny-checkers-payment-body');
             scrutinyCheckersBody.innerHTML = '';
             
-            // Fetch faculty assignments to get paper setters
-            const assignmentsResponse = await fetch('/api/faculty-assignments', {
-                credentials: 'include'
-            });
-            
-            if (!assignmentsResponse.ok) {
-                throw new Error('Failed to fetch faculty assignments');
-            }
-            
-            const assignments = await assignmentsResponse.json();
-            
-            // Filter paper setters (role is 'Paper Setter' and questionPaperStatus is 'submitted')
-            const paperSetters = assignments.filter(assignment => 
-                assignment.role === 'Paper Setter' && 
-                assignment.questionPaperStatus === 'submitted'
-            );
-            
-            // Display paper setters
-            if (paperSetters.length === 0) {
-                paperSettersBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No paper setters found</td></tr>';
-            } else {
-                paperSetters.forEach((setter, index) => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${index + 1}</td>
-                        <td>${setter.facultyId || 'N/A'}</td>
-                        <td>${setter.facultyName || 'N/A'}</td>
-                        <td>${setter.subjectCode} - ${setter.subjectName || 'N/A'}</td>
-                        <td>Pending Payment</td>
-                        <td>
-                            <button class="pay-button" onclick="processPayment('${setter.facultyId}', '${setter.subjectCode}', 'paper_setter')">Pay</button>
-                        </td>
-                    `;
-                    paperSettersBody.appendChild(row);
-                });
-            }
-            
-            // Fetch question papers to get scrutiny checkers
+            // Fetch question papers to get both paper setters and scrutiny checkers
             const papersResponse = await fetch('/api/questionpapers', {
                 credentials: 'include'
             });
@@ -964,29 +1121,58 @@
             
             const papers = await papersResponse.json();
             
-            // Filter scrutiny checkers (papers with scrutinyStatus as 'approved' or 'rejected')
-            const scrutinyCheckers = papers.filter(paper => 
-                paper.scrutinyStatus === 'approved' || paper.scrutinyStatus === 'rejected'
-            );
+            // Filter papers that have been approved by admin
+            const approvedPapers = papers.filter(paper => paper.adminApproval === 'accepted');
             
-            // Display scrutiny checkers
-            if (scrutinyCheckers.length === 0) {
-                scrutinyCheckersBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No scrutiny checkers found</td></tr>';
+            // Display paper setters for approved papers
+            if (approvedPapers.length === 0) {
+                paperSettersBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No approved papers found</td></tr>';
+                scrutinyCheckersBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No approved papers found</td></tr>';
             } else {
-                scrutinyCheckers.forEach((checker, index) => {
+                // Display paper setters
+                approvedPapers.forEach((paper, index) => {
+                    const facultyAssignment = assignments.find(a => 
+                        a.subjectCode === paper.subjectCode && 
+                        (a.facultyId === paper.facultyId || a.facultyId === paper.paperSetterId) &&
+                        a.role === 'Paper Setter'
+                    );
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${index + 1}</td>
-                        <td>${checker.scrutinizerId || 'N/A'}</td>
-                        <td>${checker.scrutinizerName || 'N/A'}</td>
-                        <td>${checker.subjectCode} - ${checker.subjectTitle || 'N/A'}</td>
+                        <td>${paper.paperSetterId || paper.facultyId || 'N/A'}</td>
+                        <td>${facultyAssignment ? facultyAssignment.facultyName : (paper.paperSetterName || paper.facultyName || 'N/A')}</td>
+                        <td>${paper.subjectCode} - ${paper.subjectTitle || 'N/A'}</td>
                         <td>Pending Payment</td>
                         <td>
-                            <button class="pay-button" onclick="processPayment('${checker.scrutinizerId}', '${checker.subjectCode}', 'scrutiny_checker')">Pay</button>
+                            <button class="pay-button" onclick="processPayment('${paper.paperSetterId || paper.facultyId}', '${paper.subjectCode}', 'paper_setter')">Pay</button>
                         </td>
                     `;
-                    scrutinyCheckersBody.appendChild(row);
+                    paperSettersBody.appendChild(row);
                 });
+
+                // Display scrutiny checkers for approved papers that have completed scrutiny
+                const completedScrutinyPapers = approvedPapers.filter(paper => 
+                    paper.scrutinyStatus === 'approved' || paper.scrutinyStatus === 'rejected'
+                );
+
+                if (completedScrutinyPapers.length === 0) {
+                    scrutinyCheckersBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No completed scrutiny papers found</td></tr>';
+                } else {
+                    completedScrutinyPapers.forEach((paper, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${paper.scrutinizerId || 'N/A'}</td>
+                            <td>${paper.scrutinizerName || 'N/A'}</td>
+                            <td>${paper.subjectCode} - ${paper.subjectTitle || 'N/A'}</td>
+                            <td>Pending Payment</td>
+                            <td>
+                                <button class="pay-button" onclick="processPayment('${paper.scrutinizerId}', '${paper.subjectCode}', 'scrutiny_checker')">Pay</button>
+                            </td>
+                        `;
+                        scrutinyCheckersBody.appendChild(row);
+                    });
+                }
             }
         } catch (error) {
             console.error('Error loading payment data:', error);
@@ -995,7 +1181,7 @@
       }
       
       // Function to process payment
-      function processPayment(facultyId, subjectCode, type) {
+      async function processPayment(facultyId, subjectCode, type) {
         if (!facultyId || !subjectCode || !type) {
             alert('Missing information for payment processing');
             return;
@@ -1004,74 +1190,123 @@
         const facultyType = type === 'paper_setter' ? 'Paper Setter' : 'Scrutiny Checker';
         
         if (confirm(`Are you sure you want to process payment for ${facultyType} (ID: ${facultyId}) for subject ${subjectCode}?`)) {
-            alert('Payment is being processed...');
-            
-            // In a real application, you would make an API call to process the payment
-            // For now, we'll just simulate the payment process
-            
-            setTimeout(() => {
-                alert(`Payment processed successfully for ${facultyType} (ID: ${facultyId}) for subject ${subjectCode}`);
+            try {
+                // Verify that the paper is approved before processing payment
+                const papersResponse = await fetch('/api/questionpapers', {
+                    credentials: 'include'
+                });
                 
-                // Update the status in the table
-                const tableBody = type === 'paper_setter' ? 
-                    document.getElementById('paper-setters-payment-body') : 
-                    document.getElementById('scrutiny-checkers-payment-body');
-                
-                const rows = tableBody.getElementsByTagName('tr');
-                for (let i = 0; i < rows.length; i++) {
-                    const cells = rows[i].getElementsByTagName('td');
-                    if (cells[1].textContent === facultyId && cells[3].textContent.includes(subjectCode)) {
-                        cells[4].textContent = 'Paid';
-                        cells[5].innerHTML = '<span style="color: green;">Paid</span>';
-                        break;
-                    }
+                if (!papersResponse.ok) {
+                    throw new Error('Failed to verify paper approval status');
                 }
-            }, 1500);
+                
+                const papers = await papersResponse.json();
+                const paper = papers.find(p => p.subjectCode === subjectCode && 
+                    (type === 'paper_setter' ? p.facultyId === facultyId : p.scrutinizerId === facultyId));
+                
+                if (!paper) {
+                    throw new Error('Question paper not found');
+                }
+                
+                if (paper.adminApproval !== 'accepted') {
+                    throw new Error('Cannot process payment. Question paper has not been approved by admin.');
+                }
+                
+                alert('Payment is being processed...');
+                
+                // Simulate payment processing
+                setTimeout(() => {
+                    alert(`Payment processed successfully for ${facultyType} (ID: ${facultyId}) for subject ${subjectCode}`);
+                    
+                    // Update the status in the table
+                    const tableBody = type === 'paper_setter' ? 
+                        document.getElementById('paper-setters-payment-body') : 
+                        document.getElementById('scrutiny-checkers-payment-body');
+                    
+                    const rows = tableBody.getElementsByTagName('tr');
+                    for (let i = 0; i < rows.length; i++) {
+                        const cells = rows[i].getElementsByTagName('td');
+                        if (cells[1].textContent === facultyId && cells[3].textContent.includes(subjectCode)) {
+                            cells[4].textContent = 'Paid';
+                            cells[5].innerHTML = '<span style="color: green;">Paid</span>';
+                            break;
+                        }
+                    }
+                }, 1500);
+            } catch (error) {
+                console.error('Error processing payment:', error);
+                alert(error.message || 'Failed to process payment. Please try again.');
+            }
         }
       }
 
-      function showAssignScrutinizerModal(paperId) {
-        const modal = document.createElement('div');
-        modal.id = 'assign-scrutinizer-modal';
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        `;
+      async function showAssignScrutinizerModal(paperId) {
+        try {
+            // First fetch the question paper details
+            const response = await fetch(`/api/questionpaper/${paperId}`, { 
+                credentials: 'include' 
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch question paper details');
+            }
+            
+            const paper = await response.json();
+            
+            if (!paper.examDate) {
+                alert('Exam date not found for this question paper');
+                return;
+            }
 
-        modal.innerHTML = `
-            <div style="background: white; padding: 20px; border-radius: 8px; width: 400px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0;">Assign Scrutinizer</h3>
-                    <button onclick="closeAssignScrutinizerModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
-                </div>
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Scrutinizer ID:</label>
-                    <input type="text" id="scrutinizerId" class="input-field" required>
-                </div>
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Scrutinizer Name:</label>
-                    <input type="text" id="scrutinizerName" class="input-field" required>
-                </div>
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Scrutiny Deadline:</label>
-                    <input type="date" id="scrutinyDeadline" class="input-field" required>
-                </div>
-                <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button class="cancel-button" onclick="closeAssignScrutinizerModal()">Cancel</button>
-                    <button class="save-button" onclick="assignScrutinizer('${paperId}')">Assign</button>
-                </div>
-            </div>
-        `;
+            const modal = document.createElement('div');
+            modal.id = 'assign-scrutinizer-modal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            `;
 
-        document.body.appendChild(modal);
+            // Store exam date in modal dataset
+            modal.dataset.paperId = paperId;
+            modal.dataset.examDate = paper.examDate;
+
+            modal.innerHTML = `
+                <div style="background: white; padding: 20px; border-radius: 8px; width: 400px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">Assign Scrutinizer</h3>
+                        <button onclick="closeAssignScrutinizerModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px;">Scrutinizer ID:</label>
+                        <input type="text" id="scrutinizerId" class="input-field" required>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px;">Scrutinizer Name:</label>
+                        <input type="text" id="scrutinizerName" class="input-field" required>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px;">Scrutiny Deadline:</label>
+                        <input type="date" id="scrutinyDeadline" class="input-field" required>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button class="cancel-button" onclick="closeAssignScrutinizerModal()">Cancel</button>
+                        <button class="save-button" onclick="assignScrutinizer('${paperId}')">Assign</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+        } catch (error) {
+            console.error('Error showing assign scrutinizer modal:', error);
+            alert('Failed to load question paper details. Please try again.');
+        }
       }
 
       function closeAssignScrutinizerModal() {
@@ -1082,40 +1317,93 @@
       }
 
       async function assignScrutinizer(paperId) {
-        const scrutinizerId = document.getElementById('scrutinizerId').value.trim();
-        const scrutinizerName = document.getElementById('scrutinizerName').value.trim();
-        const scrutinyDeadline = document.getElementById('scrutinyDeadline').value;
-
-        if (!scrutinizerId || !scrutinizerName || !scrutinyDeadline) {
-            alert('Please fill in all fields');
-            return;
-        }
-
         try {
-            const response = await fetch('/api/assign-scrutinizer', {
+            const sessionValid = await checkSession();
+            if (!sessionValid) {
+                alert('Session expired. Please log in again.');
+                window.location.href = '/index.html';
+                return;
+            }
+
+            const scrutinizerId = document.getElementById('scrutinizerId').value.trim();
+            const scrutinizerName = document.getElementById('scrutinizerName').value.trim();
+            const scrutinyDeadline = document.getElementById('scrutinyDeadline').value;
+            
+            // Get exam date from modal dataset
+            const modal = document.getElementById('assign-scrutinizer-modal');
+            const examDate = modal ? modal.dataset.examDate : null;
+
+            if (!scrutinizerId) {
+                alert('Please select a scrutinizer');
+                return;
+            }
+
+            if (!scrutinizerName) {
+                alert('Please enter scrutinizer name');
+                return;
+            }
+
+            if (!scrutinyDeadline) {
+                alert('Please set a deadline for scrutiny');
+                return;
+            }
+
+            if (!examDate) {
+                alert('Exam date not found. Please try again.');
+                return;
+            }
+
+            // Convert dates to Date objects for comparison
+            const deadlineDate = new Date(scrutinyDeadline);
+            const examDateObj = new Date(examDate);
+
+            // Check if deadline is before exam date
+            if (deadlineDate >= examDateObj) {
+                const errorMessage = `Error: Scrutiny deadline (${deadlineDate.toLocaleDateString()}) must be before the exam date (${examDateObj.toLocaleDateString()}). Please select an earlier date for scrutiny deadline.`;
+                alert(errorMessage);
+                return;
+            }
+
+            const response = await fetch(`/api/questionpaper/${paperId}/assign-scrutinizer`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 credentials: 'include',
                 body: JSON.stringify({
-                    questionPaperId: paperId,
                     scrutinizerId,
                     scrutinizerName,
                     scrutinyDeadline: new Date(scrutinyDeadline)
                 })
             });
 
+            if (response.status === 401) {
+                alert('Session expired. Please log in again.');
+                window.location.href = '/index.html';
+                return;
+            }
+
+            if (response.status === 403) {
+                alert('You are not authorized to assign scrutinizers.');
+                return;
+            }
+
+            if (response.status === 404) {
+                alert('Question paper not found.');
+                return;
+            }
+
             if (!response.ok) {
-                throw new Error('Failed to assign scrutinizer');
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to assign scrutinizer');
             }
 
             alert('Scrutinizer assigned successfully!');
             closeAssignScrutinizerModal();
-            loadQuestionPapers();
+            await loadQuestionPapers();
         } catch (error) {
             console.error('Error assigning scrutinizer:', error);
-            alert('Failed to assign scrutinizer. Please try again.');
+            alert(`Failed to assign scrutinizer: ${error.message}`);
         }
       }
 
@@ -1320,6 +1608,218 @@
         const modal = document.querySelector('.modal');
         if (modal) {
             modal.remove();
+        }
+      }
+
+      async function loadApprovals() {
+        try {
+          const response = await fetch('/api/questionpapers', {
+            credentials: 'include'
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch question papers');
+          }
+
+          const papers = await response.json();
+          const tableBody = document.getElementById('approval-table-body');
+          tableBody.innerHTML = '';
+
+          // Filter papers that have been approved by scrutiny
+          const approvedPapers = papers.filter(paper => 
+            paper.scrutinyStatus === 'approved'
+          );
+
+          if (approvedPapers.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center;">No papers found</td></tr>';
+            return;
+          }
+
+          approvedPapers.forEach((paper, index) => {
+            const row = document.createElement('tr');
+            const isApproved = paper.adminApproval === 'accepted';
+            const isRejected = paper.adminApproval === 'rejected';
+            // Get date of exam and session
+            const examDate = paper.examDate ? new Date(paper.examDate) : null;
+            const examDateStr = examDate ? examDate.toLocaleDateString() : 'N/A';
+            const session = paper.session || 'N/A';
+            // Print Question Paper: one day before exam date
+            let printDateStr = 'N/A';
+            if (examDate) {
+              const printDate = new Date(examDate);
+              printDate.setDate(printDate.getDate() - 1);
+              printDateStr = printDate.toLocaleDateString();
+            }
+            row.innerHTML = `
+              <td>${index + 1}</td>
+              <td>${examDateStr}</td>
+              <td>${session}</td>
+              <td>${paper.year || 'N/A'}</td>
+              <td>${paper.semester || 'N/A'}</td>
+              <td>${paper.subjectCode}</td>
+              <td>${paper.subjectTitle}</td>
+              <td>${printDateStr}</td>
+              <td>
+                <button class="view-btn" onclick="viewQuestionPaper('${paper._id}')">View Paper</button>
+              </td>
+              <td class="approval-actions">
+                ${isApproved ? 
+                  '<span class="approval-label-approved">Approved</span>' :
+                  isRejected ?
+                  '<span class="approval-label-rejected">Rejected</span>' :
+                  `<button class="approve-btn" onclick="handleAdminApproval('${paper._id}', 'accepted')">Approve</button>
+                   <button class="reject-btn" onclick="handleAdminApproval('${paper._id}', 'rejected')">Reject</button>`
+                }
+              </td>
+            `;
+            tableBody.appendChild(row);
+          });
+        } catch (error) {
+          console.error('Error loading approvals:', error);
+          const tableBody = document.getElementById('approval-table-body');
+          tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: red;">Failed to load papers. Please try again later.</td></tr>';
+        }
+      }
+
+      async function viewQuestionPaper(paperId) {
+        try {
+          const response = await fetch(`/api/questionpaper/${paperId}`, {
+            credentials: 'include'
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch question paper');
+          }
+
+          const paper = await response.json();
+          
+          // Create modal for viewing the paper
+          const modal = document.createElement('div');
+          modal.className = 'modal';
+          modal.style.cssText = `
+            display: block;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow: auto;
+          `;
+
+          modal.innerHTML = `
+            <div class="modal-content" style="
+              background-color: #fefefe;
+              margin: 2% auto;
+              padding: 20px;
+              border: 1px solid #888;
+              width: 80%;
+              max-width: 800px;
+              border-radius: 8px;
+              position: relative;
+              max-height: 90vh;
+              overflow-y: auto;
+            ">
+              <div class="modal-header" style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid #eee;
+              ">
+                <h2 style="margin: 0; color: #0f83ff;">Question Paper - ${paper.subjectCode}</h2>
+                <button class="close-btn" onclick="closeModal()" style="
+                  background: none;
+                  border: none;
+                  font-size: 24px;
+                  cursor: pointer;
+                  color: #666;
+                ">&times;</button>
+              </div>
+              <div class="modal-body" style="padding: 10px 0;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                  <h2 style="margin: 0; color: #333;">${paper.examName || 'Examination'}</h2>
+                  <p style="margin: 5px 0;"><strong>Department:</strong> ${paper.department || 'N/A'}</p>
+                  <p style="margin: 5px 0;"><strong>Semester:</strong> ${paper.semester || 'N/A'}</p>
+                  <p style="margin: 5px 0;"><strong>Subject Code:</strong> ${paper.subjectCode}</p>
+                  <p style="margin: 5px 0;"><strong>Subject Title:</strong> ${paper.subjectTitle}</p>
+                  <p style="margin: 5px 0;"><strong>Regulation:</strong> ${paper.regulation || 'N/A'}</p>
+                  <p style="margin: 5px 0;"><strong>Time:</strong> ${paper.time || 'N/A'}</p>
+                  <p style="margin: 5px 0;"><strong>Maximum Marks:</strong> ${paper.maxMarks || 'N/A'}</p>
+                </div>
+                <div style="border-top: 2px solid #333; margin: 20px 0;"></div>
+                <div class="paper-content" style="padding: 15px;">
+                  <h3 style="color: #0f83ff; margin-top: 20px; margin-bottom: 10px; text-align: center;">Part A (10 x 2 = 20 Marks)</h3>
+                  <div style="white-space: normal; line-height: 1.5; background: #fff; padding: 15px; border-radius: 4px; border: 1px solid #eee; text-align: left;">
+                    ${paper.partAQuestions ? paper.partAQuestions.map((q, i) => `<div>${i + 1}. ${q}</div>`).join('') : 'No questions'}
+                  </div>
+                  <h3 style="color: #0f83ff; margin-top: 20px; margin-bottom: 10px; text-align: center;">Part B (8 x 8 = 64 Marks)</h3>
+                  <div style="white-space: normal; line-height: 1.5; background: #fff; padding: 15px; border-radius: 4px; border: 1px solid #eee; text-align: left;">
+                    ${paper.partBQuestions ? paper.partBQuestions.map((q, i) => `<div>${i + 11}. ${q}</div>`).join('') : 'No questions'}
+                  </div>
+                  <h3 style="color: #0f83ff; margin-top: 20px; margin-bottom: 10px; text-align: center;">Part C (2 x 8 = 16 Marks)</h3>
+                  <div style="white-space: normal; line-height: 1.5; background: #fff; padding: 15px; border-radius: 4px; border: 1px solid #eee; text-align: left;">
+                    ${paper.partCQuestions ? paper.partCQuestions.map((q, i) => `<div>${i + 23}. ${q}</div>`).join('') : 'No questions'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          document.body.appendChild(modal);
+        } catch (error) {
+          console.error('Error viewing question paper:', error);
+          alert('Failed to load question paper. Please try again.');
+        }
+      }
+
+      async function handleAdminApproval(paperId, action) {
+        if (!confirm(`Are you sure you want to ${action} this question paper?`)) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/questionpaper/${paperId}/approval`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ action })
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to process approval');
+          }
+
+          const result = await response.json();
+          
+          if (result.success) {
+            // Update the UI immediately
+            const approvalCell = document.querySelector(`button[onclick*="${paperId}"]`).closest('.approval-actions');
+            if (approvalCell) {
+              if (action === 'accepted') {
+                approvalCell.innerHTML = '<span class="approval-label-approved">Approved</span>';
+              } else if (action === 'rejected') {
+                approvalCell.innerHTML = '<span class="approval-label-rejected">Rejected</span>';
+              }
+            }
+            alert(`Question paper ${action} successfully`);
+          } else {
+            throw new Error(result.message || 'Failed to process approval');
+          }
+        } catch (error) {
+          console.error('Error processing approval:', error);
+          alert('Failed to process approval. Please try again later.');
+        }
+      }
+
+      function closeModal() {
+        const modal = document.querySelector('.modal');
+        if (modal) {
+          modal.remove();
         }
       }
     </script>

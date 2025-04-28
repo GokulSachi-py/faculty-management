@@ -403,7 +403,8 @@
                 }
 
                 alert('Scrutiny submitted successfully!');
-                loadPapers(); // Reload the papers list
+                // Redirect to faculty dashboard after successful submission
+                window.location.href = '/faculty_dashboard.html';
             } catch (error) {
                 console.error('Error submitting scrutiny:', error);
                 alert(`Failed to submit scrutiny: ${error.message}`);
