@@ -157,7 +157,7 @@ const facultyAssignmentSchema = new mongoose.Schema({
     deadlineDate: { type: Date }
 });
 
-// Mongoose Schema for QuestionPaper
+
 const questionPaperSchema = new mongoose.Schema({
     facultyId: { type: String, required: true },
     examName: { type: String, required: true },
@@ -483,7 +483,8 @@ app.post('/remove-faculty-assignment', async (req, res) => {
 });
 
 app.post("/signup", async (req, res) => {
-    const { username, password, role = 'faculty', facultyId = "1000" } = req.body;
+    const { username, password, role = 'faculty' } = req.body;
+    const facultyId = req.body.facultyId || Math.floor(1000 + Math.random() * 9000).toString(); // Generate unique facultyId
 
     if (!username || !password) {
         return res.status(400).json({ message: "Username and password are required." });
@@ -495,9 +496,6 @@ app.post("/signup", async (req, res) => {
             return res.status(400).json({ message: "User already exists." });
         }
 
-        // facultyId = facultyId || Math.floor(Math.random() * 100000)
-
-
         const newUser = new User({ username, password, role: role.toLowerCase(), facultyId });
         await newUser.save();
         req.session.user = newUser;
@@ -505,11 +503,15 @@ app.post("/signup", async (req, res) => {
         res.status(201).json({ message: "Signup successful!" });
     } catch (error) {
         console.error("Signup error:", error);
-        res.status(500).json({ message: "Error signing up." });
+        if (error.code === 11000) {
+            res.status(400).json({ message: "Duplicate facultyId. Please try again." });
+        } else {
+            res.status(500).json({ message: "Error signing up." });
+        }
     }
 });
 
-// ✨ Save Extra Faculty Details (Missing Route Added)
+//  Save Extra Faculty Details (Missing Route Added)
 app.post('/signup-details', async (req, res) => {
     const {
         username, fullName, dob, facultyId, address, campus, campusName,

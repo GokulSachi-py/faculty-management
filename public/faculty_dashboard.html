@@ -10,24 +10,78 @@
         font-family: Arial, sans-serif;
         margin: 0;
         background-color: #f4f4f4;
+        display: flex;
+        min-height: 100vh;
+      }
+      .sidebar {
+        width: 250px;
+        background-color: #0f83ff;
+        color: white;
+        padding: 20px 0;
+        height: 100vh;
+        position: fixed;
+        left: 0;
+        top: 0;
+      }
+      .sidebar-header {
+        padding: 0 20px;
+        margin-bottom: 30px;
+      }
+      .sidebar-header h2 {
+        margin: 0;
+        font-size: 1.5em;
+      }
+      .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .sidebar-menu li {
+        padding: 10px 20px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      .sidebar-menu li:hover {
+        background-color: #0d6efd;
+      }
+      .sidebar-menu li.active {
+        background-color: #0d6efd;
+        border-left: 4px solid white;
+      }
+      .main-content {
+        margin-left: 250px;
+        flex: 1;
+        padding: 20px;
       }
       header {
         background-color: #0f83ff;
         color: white;
         padding: 20px;
         text-align: center;
+        margin-bottom: 20px;
+        position: relative;
       }
-      main {
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
+      header h1 {
+        margin: 0;
+      }
+      .logout-btn {
+        background-color: #d9534f;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
       }
       .dashboard-card {
         background-color: white;
         border-radius: 10px;
         padding: 20px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
       }
       .section {
         margin-bottom: 20px;
@@ -36,70 +90,14 @@
         color: #0f83ff;
         margin-bottom: 15px;
       }
-      .logout-btn {
-        background-color: #d9534f;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        float: right;
-        cursor: pointer;
-      }
       .logout-btn:hover {
         background-color: #c9302c;
       }
-      .card-title {
-        margin-top: 0;
-      }
-      footer {
-        background-color: #eee;
-        text-align: center;
-        padding: 10px;
-        position: fixed;
-        bottom: 0;
-        width: 100%;
-      }
-      #assignment-query {
+      .content-section {
         display: none;
-        background-color: #f9f9f9;
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
-      #assignment-query h3 {
-        margin: 0;
-        font-size: 18px;
-      }
-      #assignment-query button {
-        background-color: #5bc0de;
-        color: white;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 5px;
-        margin: 5px;
-        cursor: pointer;
-      }
-      #assignment-query button:hover {
-        background-color: #31b0d5;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-      }
-      table,
-      th,
-      td {
-        border: 1px solid #ddd;
-      }
-      th,
-      td {
-        padding: 10px;
-        text-align: left;
-      }
-      th {
-        background-color: #0f83ff;
-        color: white;
+      .content-section.active {
+        display: block;
       }
       .assignment-container {
         display: flex;
@@ -680,80 +678,87 @@
     </style>
   </head>
   <body>
-    <header>
-      <h1>Faculty Dashboard - College of Engineering Guindy</h1>
-      <div style="display: flex; gap: 10px; align-items: center;">
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>Faculty Dashboard</h2>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="active" data-section="assignments">Paper Setter Assignments</li>
+        <li data-section="scrutiny">Scrutiny Assignments</li>
+      </ul>
+    </div>
+
+    <div class="main-content">
+      <header>
+        <h1>Faculty Dashboard - College of Engineering Guindy</h1>
         <button class="logout-btn" onclick="logout()">Logout</button>
-      </div>
-    </header>
+      </header>
 
-    <main>
-      <!-- Welcome Section -->
-      <div class="dashboard-card">
-        <h2 class="card-title">Welcome, Faculty Member!</h2>
-        <p>
-          This is your dashboard where you can manage your profile, view
-          schedules, and handle academic responsibilities.
-        </p>
-      </div>
-
-      <!-- Faculty Assignments Section -->
-      <div class="dashboard-card">
-        <h2>Faculty Assignments</h2>
-        
-        <!-- Pending Responses Section -->
-        <div id="responseSection" class="response-section" style="display: none;">
-            <h3 style="color: #0f83ff; margin-top: 0;">Pending Assignments</h3>
-            <div id="pendingResponses" class="pending-grid">
-                <!-- Dynamic response cards will be added here -->
-            </div>
+      <div id="assignments" class="content-section active">
+        <div class="dashboard-card">
+          <h2 class="card-title">Welcome, Faculty Member!</h2>
+          <p>
+            This is your dashboard where you can manage your profile, view
+            schedules, and handle academic responsibilities.
+          </p>
         </div>
 
-        <!-- Assignments Table -->
-        <div style="margin-top: 20px;">
-            <h3 style="color: #0f83ff;">Accepted Assignments</h3>
-            <table id="assignmentTable" class="assignment-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Subject Code</th>
-                        <th>Subject Name</th>
-                        <th>Regulation</th>
-                        <th>Role</th>
-                        <th>Set Question Paper</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Dynamic rows will be added here -->
-                </tbody>
-            </table>
+        <div class="dashboard-card">
+          <h2>Faculty Assignments</h2>
+          
+          <!-- Pending Responses Section -->
+          <div id="responseSection" class="response-section" style="display: none;">
+              <h3 style="color: #0f83ff; margin-top: 0;">Pending Assignments</h3>
+              <div id="pendingResponses" class="pending-grid">
+                  <!-- Dynamic response cards will be added here -->
+              </div>
+          </div>
+
+          <!-- Assignments Table -->
+          <div style="margin-top: 20px;">
+              <h3 style="color: #0f83ff;">Accepted Assignments</h3>
+              <table id="assignmentTable" class="assignment-table">
+                  <thead>
+                      <tr>
+                          <th>#</th>
+                          <th>Subject Code</th>
+                          <th>Subject Name</th>
+                          <th>Regulation</th>
+                          <th>Role</th>
+                          <th>Set Question Paper</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      <!-- Dynamic rows will be added here -->
+                  </tbody>
+              </table>
+          </div>
         </div>
       </div>
 
-      <!-- Scrutiny Requests Section -->
-      <div class="dashboard-card">
-        <h2>Scrutiny Assignments</h2>
-        <table class="assignment-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Subject Code</th>
-              <th>Subject Name</th>
-              <th>Department</th>
-              <th>Semester</th>
-              <th>Deadline</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="scrutiny-assignments-body">
-            <!-- Dynamic rows will be added here -->
-          </tbody>
-        </table>
+      <div id="scrutiny" class="content-section">
+        <div class="dashboard-card">
+          <h2>Scrutiny Assignments</h2>
+          <table class="assignment-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Subject Code</th>
+                <th>Subject Name</th>
+                <th>Department</th>
+                <th>Semester</th>
+                <th>Deadline</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="scrutiny-assignments-body">
+              <!-- Dynamic rows will be added here -->
+            </tbody>
+          </table>
+        </div>
       </div>
-    </main>
-
-    <footer>&copy; 2025 Anna University - CEG. All rights reserved.</footer>
+    </div>
 
     <div class="notification-container" id="notificationContainer"></div>
 
@@ -1217,7 +1222,7 @@
         }
 
         const assignments = await response.json();
-        console.log('Received scrutiny assignments:', assignments); // Debug log
+        console.log('Received scrutiny assignments:', assignments);
         const tbody = document.getElementById('scrutiny-assignments-body');
         tbody.innerHTML = '';
 
@@ -1241,19 +1246,20 @@
           
           if (assignment.scrutinyStatus === 'approved') {
             statusHtml = '<span class="status-approved">Approved</span>';
+            actionsHtml = `<button class="action-btn view-btn" onclick="viewQuestionPaper('${assignment._id}')">View Paper</button>`;
           } else if (assignment.scrutinyStatus === 'rejected') {
             statusHtml = '<span class="status-rejected">Rejected</span>';
+            actionsHtml = `<button class="action-btn view-btn" onclick="viewQuestionPaper('${assignment._id}')">View Paper</button>`;
           } else if (assignment.scrutinyRequestStatus === 'pending') {
+            statusHtml = '<span class="status-pending">Pending Response</span>';
             actionsHtml = `
               <button class="action-btn accept-btn" onclick="respondToScrutinyRequest('${assignment._id}', 'accepted')">Accept</button>
               <button class="action-btn reject-btn" onclick="respondToScrutinyRequest('${assignment._id}', 'rejected')">Reject</button>
             `;
-          } else if (assignment.scrutinyStatus === 'pending') {
+          } else if (assignment.scrutinyRequestStatus === 'accepted') {
+            statusHtml = '<span class="status-pending">Pending Scrutiny</span>';
             actionsHtml = `<button class="action-btn submit-btn" onclick="submitScrutiny('${assignment._id}')">Submit Scrutiny</button>`;
           }
-
-          // Always show view button
-          const viewButtonHtml = `<button class="action-btn view-btn" onclick="viewQuestionPaper('${assignment._id}')">View Paper</button>`;
 
           row.innerHTML = `
             <td>${index + 1}</td>
@@ -1263,7 +1269,7 @@
             <td>${assignment.semester || 'N/A'}</td>
             <td>${formattedDeadline}</td>
             <td>${statusHtml}</td>
-            <td>${viewButtonHtml} ${actionsHtml}</td>
+            <td>${actionsHtml}</td>
           `;
           tbody.appendChild(row);
         });
@@ -1433,6 +1439,27 @@
         modal.remove();
       }
     }
+
+    // Add sidebar navigation functionality
+    document.querySelectorAll('.sidebar-menu li').forEach(item => {
+      item.addEventListener('click', function() {
+        // Remove active class from all menu items
+        document.querySelectorAll('.sidebar-menu li').forEach(li => {
+          li.classList.remove('active');
+        });
+        // Add active class to clicked item
+        this.classList.add('active');
+        
+        // Hide all content sections
+        document.querySelectorAll('.content-section').forEach(section => {
+          section.classList.remove('active');
+        });
+        
+        // Show selected content section
+        const sectionId = this.getAttribute('data-section');
+        document.getElementById(sectionId).classList.add('active');
+      });
+    });
     </script>
   </body>
 </html>
