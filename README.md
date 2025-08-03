@@ -277,28 +277,3 @@ The system uses Gmail SMTP for email notifications. To configure:
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👨‍💻 Authors
-
-- **GokulSachi-py** - *Initial work* - [GitHub Profile](https://github.com/GokulSachi-py)
-
-## 🙏 Acknowledgments
-
-- Anna University CEG for the project requirements
-- Express.js community for the excellent framework
-- MongoDB team for the robust database solution
-
-## 📞 Support
-
-For support and questions:
-- Create an issue on GitHub
-- Contact the development team
-- Check the troubleshooting section above
-
----
-
-**Note**: This system is designed for educational institutions and includes features specific to Anna University CEG's requirements. Modify as needed for other institutions.
