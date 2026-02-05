@@ -1,0 +1,31 @@
+{
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-session": "^1.18.1",
+    "mongod": "^2.0.0",
+    "mongoose": "^8.14.0",
+    "nodemailer": "^6.10.1"
+  },
+  "name": "faculty-management",
+  "version": "1.0.0",
+  "description": "��#\u0000 \u0000f\u0000a\u0000c\u0000u\u0000l\u0000t\u0000y\u0000_\u0000m\u0000a\u0000n\u0000a\u0000g\u0000\r\u0000 \u0000#\u0000 \u0000f\u0000a\u0000c\u0000u\u0000l\u0000t\u0000y\u0000_\u0000m\u0000a\u0000n\u0000a\u0000g\u0000\r\u0000 \u0000#\u0000 \u0000f\u0000a\u0000c\u0000u\u0000l\u0000t\u0000y\u0000_\u0000m\u0000a\u0000n\u0000a\u0000g\u0000\r\u0000 \u0000#\u0000 \u0000f\u0000a\u0000c\u0000u\u0000l\u0000t\u0000y\u0000_\u0000m\u0000a\u0000n\u0000a\u0000g\u0000\r\u0000 \u0000#\u0000 \u0000f\u0000a\u0000c\u0000u\u0000l\u0000t\u0000y\u0000_\u0000m\u0000a\u0000n\u0000a\u0000g\u0000\r\u0000 \u0000",
+  "main": "config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tharun-0-0-6/faculty-manag.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/tharun-0-0-6/faculty-manag/issues"
+  },
+  "homepage": "https://github.com/tharun-0-0-6/faculty-manag#readme"
+}
